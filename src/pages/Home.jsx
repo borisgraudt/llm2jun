@@ -248,7 +248,7 @@ export default function Home() {
                   {currentChat.messages.length === 0 ? (
                     <div className="flex-1 flex items-center justify-center text-center px-4 py-12 overflow-auto" style={{ height: 'calc(100vh - 220px)' }}>
                       <div className="max-w-2xl w-full">
-                        <h2 className="text-3xl font-bold mb-8 text-gray-800">Опишите свою проблему</h2>>
+                        <h2 className="text-3xl font-bold mb-8 text-gray-800">Опишите свою проблему</h2>
                         <div className="flex rounded-lg border border-gray-300 overflow-hidden">
                           <input
                             type="text"
