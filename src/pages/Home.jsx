@@ -166,8 +166,8 @@ export default function Home() {
             <div 
               key={chat.id}
               onClick={() => setActiveChat(chat.id)}
-              className={`p-3 cursor-pointer hover:bg-gray-200 transition-colors border-b border-gray-200 ${
-                activeChat === chat.id ? 'bg-gray-200' : ''
+              className={`p-3 cursor-pointer hover:bg-gray-200 transition-colors border-b border-gray-200 chat-item ${
+                activeChat === chat.id ? 'active' : ''
               }`}
             >
               <div className="flex items-center">
@@ -182,7 +182,7 @@ export default function Home() {
       </div>
       
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden main-content-area">
         {/* Header */}
         <header className="bg-gray-100 border-b border-gray-200 p-3 flex justify-between items-center">
           <div className="flex items-center">
@@ -246,7 +246,7 @@ export default function Home() {
               <div className="flex-1 flex flex-col items-center overflow-hidden">
                 <div className="flex flex-col w-full max-w-3xl h-full">
                   {currentChat.messages.length === 0 ? (
-                    <div className="flex-1 flex items-center justify-center text-center px-4 py-12 overflow-auto" style={{ height: 'calc(100vh - 220px)' }}>
+                    <div className="flex-1 flex items-center justify-center text-center px-4 py-12 overflow-auto empty-state-container">
                       <div className="max-w-2xl w-full">
                         <h2 className="text-3xl font-bold mb-8 text-gray-800">Опишите свою проблему</h2>
                         <div className="flex rounded-lg border border-gray-300 overflow-hidden">
@@ -271,7 +271,7 @@ export default function Home() {
                           </button>
                         </div>
                       
-                        <div className="flex justify-center mt-4 space-x-2">
+                        <div className="flex flex-wrap justify-center mt-4 gap-2">
                           <button className="text-gray-500 text-sm border border-gray-300 rounded-md px-3 py-2 hover:bg-gray-50">
                             <span className="flex items-center">
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -303,15 +303,15 @@ export default function Home() {
                     </div>
                   ) : (
                     <>
-                      {/* Messages List - Fixed height with scrolling */}
-                      <div className="flex-1 overflow-y-auto p-4 space-y-4 mb-6" style={{ height: 'calc(100vh - 250px)' }}>
+                      {/* Messages List - Responsive height with scrolling */}
+                      <div className="flex-1 overflow-y-auto p-4 space-y-4 mb-6 chat-messages-container">
                         {currentChat.messages.map((msg, index) => (
                           <div 
                             key={index}
                             className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                           >
                             <div 
-                              className={`max-w-xs sm:max-w-md p-3 rounded-lg ${
+                              className={`max-w-xs sm:max-w-md p-3 rounded-lg chat-message ${
                                 msg.role === 'user' 
                                   ? 'bg-gray-300 text-gray-800 rounded-br-none' 
                                   : 'bg-gray-100 text-gray-800 rounded-bl-none'
@@ -325,7 +325,7 @@ export default function Home() {
                       </div>
 
                       {/* Message Input */}
-                      <div className="w-full mb-6">
+                      <div className="w-full mb-6 px-4 chat-input-wrapper">
                         <div className="flex rounded-lg border border-gray-300 overflow-hidden">
                           <input
                             type="text"
