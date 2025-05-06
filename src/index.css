@@ -155,6 +155,7 @@ input:checked + .toggle-slider:before {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  min-height: 500px;
 }
 
 .chat-content {
@@ -241,24 +242,41 @@ input:checked + .toggle-slider:before {
   gap: 0.5rem;
 }
 
-/* Fix height of chat container and enable smooth scrolling */
+/* Make the chat container responsive */
 .chat-messages-container {
-  height: calc(100vh - 250px);
-  max-height: 600px;
+  height: auto;
+  min-height: 200px;
+  max-height: 70vh;
+  flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 1rem;
   scroll-behavior: smooth;
 }
 
-/* Sidebar scrolling styles */
+/* Empty state container with responsive sizing */
+.empty-state-container {
+  height: auto;
+  min-height: 300px;
+  flex: 1;
+  padding: 2rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Make sidebar responsive */
 .sidebar-chats {
-  height: calc(100vh - 130px); /* Adjust based on header and new chat button height */
+  height: calc(100vh - 130px);
+  min-height: 150px;
+  max-height: calc(100vh - 130px);
   overflow-y: auto;
   overflow-x: hidden;
   scroll-behavior: smooth;
 }
 
+/* Sidebar styling */
 .sidebar-chats::-webkit-scrollbar {
   width: 4px;
 }
@@ -278,7 +296,7 @@ input:checked + .toggle-slider:before {
   scrollbar-color: #d1d5db transparent;
 }
 
-/* Add hover effect to chat items */
+/* Chat item styling */
 .chat-item {
   transition: background-color 0.2s ease;
 }
@@ -301,14 +319,86 @@ input:checked + .toggle-slider:before {
   width: 260px;
 }
 
-/* Add responsive adjustments */
-@media screen and (max-width: 768px) {
+/* Make sure the input doesn't disappear */
+.chat-input-wrapper {
+  padding: 1rem;
+  background-color: white;
+  position: relative;
+  z-index: 10;
+}
+
+/* Add overflow protection to chat messages */
+.chat-message {
+  word-break: break-word;
+  max-width: 100%;
+}
+
+/* Main content area */
+.main-content-area {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+/* Responsive adjustments for different screen sizes */
+@media (max-height: 700px) {
+  .chat-messages-container {
+    min-height: 150px;
+  }
+  
   .sidebar-chats {
-    height: calc(100vh - 110px);
+    max-height: calc(100vh - 120px);
+    min-height: 120px;
+  }
+  
+  .empty-state-container {
+    min-height: 200px;
   }
 }
 
-/* Fade in animation for chat items */
+@media (max-height: 500px) {
+  .chat-messages-container {
+    min-height: 100px;
+  }
+  
+  .empty-state-container h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+}
+
+/* Small width devices */
+@media (max-width: 640px) {
+  .tool-button span {
+    font-size: 0.75rem;
+  }
+  
+  .chat-messages-container {
+    padding: 0.5rem;
+  }
+  
+  .empty-state-container h2 {
+    font-size: 1.5rem;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 360px) {
+  .empty-state-container h2 {
+    font-size: 1.25rem;
+  }
+  
+  .header button {
+    padding: 0.25rem 0.5rem;
+  }
+  
+  .chat-input-wrapper {
+    padding: 0.5rem;
+  }
+}
+
+/* New chat animation */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(5px); }
   to { opacity: 1; transform: translateY(0); }
