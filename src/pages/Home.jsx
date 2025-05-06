@@ -76,7 +76,7 @@ export default function Home() {
               className="w-full h-full object-contain" 
             />
           </div>
-          <h1 className="text-xl font-semibold">AI Ассистент</h1>
+          <h1 className="text-xl font-semibold">Техподдержка</h1>
         </div>
         <div className="flex items-center">
           <button 
@@ -119,7 +119,7 @@ export default function Home() {
             <>
               {messages.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center text-center">
-                  <h2 className="text-3xl font-bold mb-8 text-gray-800">Чем я могу помочь?</h2>
+                  <h2 className="text-3xl font-bold mb-8 text-gray-800">Опишите свою проблему</h2>
                   <div className="w-full max-w-2xl">
                     <div className="flex rounded-lg border border-gray-300 overflow-hidden">
                       <input
@@ -127,7 +127,7 @@ export default function Home() {
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                        placeholder="Спросите что-нибудь..."
+                        placeholder="Проблема с потерей пакетов на Cisco WS-C9300-24P-A"
                         className="flex-1 px-4 py-3 focus:outline-none text-gray-800"
                       />
                       <button
