@@ -241,8 +241,6 @@ input:checked + .toggle-slider:before {
   gap: 0.5rem;
 }
 
-/* Add these styles to your index.css file */
-
 /* Fix height of chat container and enable smooth scrolling */
 .chat-messages-container {
   height: calc(100vh - 250px);
@@ -253,58 +251,16 @@ input:checked + .toggle-slider:before {
   scroll-behavior: smooth;
 }
 
-/* Style for scrollbar */
-.chat-messages-container::-webkit-scrollbar {
-  width: 6px;
-}
-
-.chat-messages-container::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.chat-messages-container::-webkit-scrollbar-thumb {
-  background-color: #d1d5db;
-  border-radius: 20px;
-}
-
-/* Style for empty state container */
-.empty-state-container {
-  height: calc(100vh - 220px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  overflow: auto;
-  padding: 2rem 1rem;
-}
-
-/* Fix layout of main content area */
-.main-content {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
-}
-
-/* Input container fixed at bottom */
-.chat-input-container {
-  padding: 1rem;
-  background-color: white;
-  border-top: 1px solid #e5e7eb;
-  z-index: 10;
-}
-
-/* Sidebar scrolling */
+/* Sidebar scrolling styles */
 .sidebar-chats {
+  height: calc(100vh - 130px); /* Adjust based on header and new chat button height */
   overflow-y: auto;
   overflow-x: hidden;
-  max-height: calc(100vh - 120px);
-  scrollbar-width: thin;
-  scrollbar-color: #d1d5db transparent;
+  scroll-behavior: smooth;
 }
 
 .sidebar-chats::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 .sidebar-chats::-webkit-scrollbar-track {
@@ -316,14 +272,48 @@ input:checked + .toggle-slider:before {
   border-radius: 20px;
 }
 
-/* Responsive adjustments */
-@media (max-height: 600px) {
-  .chat-messages-container {
-    height: calc(100vh - 200px);
-    max-height: 400px;
+/* For Firefox */
+.sidebar-chats {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+}
+
+/* Add hover effect to chat items */
+.chat-item {
+  transition: background-color 0.2s ease;
+}
+
+.chat-item:hover {
+  background-color: #f3f4f6;
+}
+
+.chat-item.active {
+  background-color: #e5e7eb;
+}
+
+/* Style for sidebar collapsed state */
+.sidebar-collapsed {
+  width: 0;
+  overflow: hidden;
+}
+
+.sidebar-expanded {
+  width: 260px;
+}
+
+/* Add responsive adjustments */
+@media screen and (max-width: 768px) {
+  .sidebar-chats {
+    height: calc(100vh - 110px);
   }
-  
-  .empty-state-container {
-    height: calc(100vh - 180px);
-  }
+}
+
+/* Fade in animation for chat items */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.new-chat-animation {
+  animation: fadeIn 0.3s ease-in-out forwards;
 }
