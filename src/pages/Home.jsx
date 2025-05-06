@@ -133,8 +133,8 @@ export default function Home() {
                       <button
                         onClick={sendMessage}
                         disabled={!message.trim()}
-                        className={`px-4 bg-gray-600 text-white transition-colors ${
-                          message.trim() ? 'hover:bg-gray-700' : 'opacity-50 cursor-not-allowed'
+                        className={`px-4 bg-gray-200 text-black transition-colors ${
+                          message.trim() ? 'hover:bg-gray-300' : 'opacity-50 cursor-not-allowed'
                         }`}
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -237,8 +237,8 @@ export default function Home() {
                       <button
                         onClick={sendMessage}
                         disabled={!message.trim()}
-                        className={`px-4 bg-gray-600 text-white transition-colors ${
-                          message.trim() ? 'hover:bg-gray-700' : 'opacity-50 cursor-not-allowed'
+                        className={`px-4 bg-gray-200 text-black transition-colors ${
+                          message.trim() ? 'hover:bg-gray-300' : 'opacity-50 cursor-not-allowed'
                         }`}
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
