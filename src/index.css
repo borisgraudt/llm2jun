@@ -243,6 +243,29 @@ input:checked + .toggle-slider:before {
   min-height: 0;
 }
 
+/* Ensure content is centered in all views */
+.max-w-3xl {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* AI/Expert toggle in search bar row */
+.search-toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+/* Styling for the toggle container in the controls bar */
+.toggle-container {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+}
+
 /* Responsive fixes for small screens */
 @media (max-height: 600px) {
   .sidebar-chats {
@@ -277,10 +300,11 @@ input:checked + .toggle-slider:before {
     padding: 0.5rem;
   }
   
-  /* Make tool buttons stack on small screens */
-  .tool-buttons {
+  /* Make search and toggle stack on very small screens */
+  .search-toggle-row {
     flex-direction: column;
     gap: 0.5rem;
+    align-items: stretch;
   }
 }
 
@@ -292,6 +316,41 @@ input:checked + .toggle-slider:before {
   
   .chat-messages-container {
     min-height: 150px;
+  }
+}
+
+/* Ensure interface is visible on very small screens */
+@media (max-height: 500px) {
+  .empty-state-container h2 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .chat-input-wrapper, .border-t {
+    padding: 0.25rem;
+  }
+  
+  .sidebar-chats {
+    max-height: 30vh;
+  }
+}
+
+/* Ensure mobile layout works */
+@media (max-width: 768px) {
+  .home-container {
+    flex-direction: column;
+  }
+  
+  .sidebar-chats {
+    max-height: 40vh;
+  }
+}
+
+/* Fix for Firefox scrolling */
+@-moz-document url-prefix() {
+  .chat-messages-container, .sidebar-chats {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db transparent;
   }
 }
 
@@ -315,47 +374,6 @@ header, .chat-input-wrapper, .border-t {
 .flex-1 {
   flex: 1 1 0%;
   min-height: 0;
-}
-
-/* Ensure content is centered in all views */
-.max-w-3xl {
-  margin-left: auto;
-  margin-right: auto;
-}
-
-/* Fix for Firefox scrolling */
-@-moz-document url-prefix() {
-  .chat-messages-container, .sidebar-chats {
-    scrollbar-width: thin;
-    scrollbar-color: #d1d5db transparent;
-  }
-}
-
-/* Ensure mobile layout works */
-@media (max-width: 768px) {
-  .home-container {
-    flex-direction: column;
-  }
-  
-  .sidebar-chats {
-    max-height: 40vh;
-  }
-}
-
-/* Ensure interface is visible on very small screens */
-@media (max-height: 500px) {
-  .empty-state-container h2 {
-    font-size: 1.25rem;
-    margin-bottom: 0.5rem;
-  }
-  
-  .chat-input-wrapper, .border-t {
-    padding: 0.25rem;
-  }
-  
-  .sidebar-chats {
-    max-height: 30vh;
-  }
 }
 
 /* New chat animation */
