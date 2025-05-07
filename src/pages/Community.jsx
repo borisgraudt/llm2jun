@@ -2121,7 +2121,6 @@ const INITIAL_FORUM_DATA = {
   ]
 },
 
-};
 
 export default function Community() {
   const [viewMode, setViewMode] = useState('categories'); // categories, threads, thread
@@ -2141,20 +2140,17 @@ export default function Community() {
     } catch (error) {
       return dateString;
     }
-  };
 
   // Handle category selection
   const handleCategoryClick = (categoryId) => {
     setActiveCategory(categoryId);
     setViewMode('threads');
-  };
 
   // Handle thread selection
   const handleThreadClick = (threadId) => {
     const thread = forumData.threads.find(t => t.id === threadId);
     setActiveThread(thread);
     setViewMode('thread');
-  };
 
   // Handle back button
   const handleBack = () => {
@@ -2165,14 +2161,12 @@ export default function Community() {
       setViewMode('categories');
       setActiveCategory(null);
     }
-  };
 
   // Handle search
   const handleSearch = (e) => {
     e.preventDefault();
     // Implement search functionality here
     console.log('Searching for:', searchQuery);
-  };
 
   // Handle like/dislike thread
   const handleLikeThread = (threadId) => {
@@ -2185,7 +2179,6 @@ export default function Community() {
       });
       return { ...prevData, threads: updatedThreads };
     });
-  };
 
   // Handle like/dislike comment
   const handleLikeComment = (threadId, commentId) => {
@@ -2204,7 +2197,6 @@ export default function Community() {
       });
       return { ...prevData, threads: updatedThreads };
     });
-  };
 
   // Handle new comment submission
   const handleCommentSubmit = (e) => {
@@ -2217,7 +2209,6 @@ export default function Community() {
       date: new Date().toISOString(),
       content: newComment,
       likes: 0
-    };
 
     setForumData(prevData => {
       const updatedThreads = prevData.threads.map(thread => {
@@ -2226,7 +2217,6 @@ export default function Community() {
             ...thread,
             comments: [...thread.comments, newCommentObj],
             replies: thread.replies + 1
-          };
         }
         return thread;
       });
@@ -2240,13 +2230,11 @@ export default function Community() {
     }));
     
     setNewComment('');
-  };
 
   // Handle new thread form change
   const handleNewThreadChange = (e) => {
     const { name, value } = e.target;
     setNewThread(prev => ({ ...prev, [name]: value }));
-  };
 
   // Handle new thread submission
   const handleNewThreadSubmit = (e) => {
@@ -2268,7 +2256,6 @@ export default function Community() {
       solved: false,
       likes: 0,
       comments: []
-    };
 
     setForumData(prevData => ({
       ...prevData,
@@ -2282,7 +2269,6 @@ export default function Community() {
     // Navigate to the new thread
     setActiveThread(newThreadObj);
     setViewMode('thread');
-  };
 
   // Get filtered threads based on active category
   const filteredThreads = activeCategory
@@ -2662,4 +2648,3 @@ export default function Community() {
 }
 
   ]
-};
