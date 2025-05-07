@@ -295,4 +295,111 @@ export default function Home() {
                                 checked={expertMode}
                                 onChange={() => setExpertMode(!expertMode)}
                               />
-                              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-
+                              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-600"></div>
+                            </label>
+                            <span className={`text-sm ${expertMode ? 'font-medium' : ''} text-gray-600`}>Эксперт</span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-center mt-4 space-x-2">
+                          <button className="text-gray-500 text-sm border border-gray-300 rounded-md px-3 py-2 hover:bg-gray-50">
+                            <span className="flex items-center">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                              </svg>
+                              Поиск
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Messages List - Responsive height with scrolling */}
+                      <div className="flex-1 overflow-y-auto p-4 space-y-4 mb-2 chat-messages-container">
+                        {currentChat.messages.map((msg, index) => (
+                          <div 
+                            key={index}
+                            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                          >
+                            <div 
+                              className={`max-w-xs sm:max-w-md p-3 rounded-lg chat-message ${
+                                msg.role === 'user' 
+                                  ? 'bg-gray-300 text-gray-800 rounded-br-none' 
+                                  : 'bg-gray-100 text-gray-800 rounded-bl-none'
+                              }`}
+                            >
+                              {msg.content}
+                            </div>
+                          </div>
+                        ))}
+                        <div ref={messagesEndRef} />
+                      </div>
+
+                      {/* Message Input and AI/Expert toggle */}
+                      <div className="w-full px-4 chat-input-wrapper">
+                        {/* AI/Expert Toggle */}
+                        <div className="flex justify-between items-center mb-3">
+                          <div className="flex items-center space-x-3">
+                            <span className={`text-sm ${!expertMode ? 'font-medium' : ''} text-gray-600`}>AI</span>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input 
+                                type="checkbox" 
+                                className="sr-only peer" 
+                                checked={expertMode}
+                                onChange={() => setExpertMode(!expertMode)}
+                              />
+                              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-600"></div>
+                            </label>
+                            <span className={`text-sm ${expertMode ? 'font-medium' : ''} text-gray-600`}>Эксперт</span>
+                          </div>
+                          
+                          <button className="text-gray-500 text-sm border border-gray-300 rounded-md px-3 py-2 hover:bg-gray-50">
+                            <span className="flex items-center">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                              </svg>
+                              Поиск
+                            </span>
+                          </button>
+                        </div>
+                        
+                        {/* Message input */}
+                        <div className="flex rounded-lg border border-gray-300 overflow-hidden mb-4">
+                          <input
+                            type="text"
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                            placeholder="Введите сообщение..."
+                            className="flex-1 px-4 py-3 focus:outline-none text-gray-800"
+                          />
+                          <button
+                            onClick={sendMessage}
+                            disabled={!message.trim()}
+                            className={`px-4 bg-gray-200 text-black transition-colors ${
+                              message.trim() ? 'hover:bg-gray-300' : 'opacity-50 cursor-not-allowed'
+                            }`}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                              <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            // Community Tab Content
+            <div className="overflow-auto h-full">
+              <Community />
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
