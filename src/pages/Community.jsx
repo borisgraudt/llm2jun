@@ -207,7 +207,9 @@ const INITIAL_FORUM_DATA = {
           content: 'Если не помогает переинициализация, то возможно повреждение образа. Попробуйте восстановить через TFTP.',
           likes: 6
         }
-        // Additional forum threads data to add to your INITIAL_FORUM_DATA object in Community.jsx
+      ]
+    },
+// Additional forum threads data to add to your INITIAL_FORUM_DATA object in Community.jsx
 // Add these to the 'threads' array in your existing data
 
 // Additional threads for networking category
@@ -1119,8 +1121,11 @@ const INITIAL_FORUM_DATA = {
       date: '2025-03-19T14:15:00',
       content: 'Проверьте также настройки MMIO в BIOS. Для NVIDIA T4 требуется установить "Above 4G Decoding" в значение Enabled и "SR-IOV Support" в Enabled.',
       likes: 21
-    },
-    {
+    }
+  ]
+},
+
+{
   id: 31,
   categoryId: 'security',
   title: 'Cisco Firepower - проблема с правилами SSL',
@@ -1176,13 +1181,6 @@ const INITIAL_FORUM_DATA = {
       content: 'Ошибка "VNI_VRF_MAPPING_FAIL" обычно возникает, когда VNI не привязан к правильному VRF. Проверьте, что команда "vni <id>" присутствует в нужном VRF.',
       likes: 18
     },
-    {
-      id: 3202,
-      author: 'Елена К.',
-      date: '2025-03-14T17:50:00',
-      content: 'Проверьте также конфигурацию BGP EVPN. На Catalyst 9500 требуется явное включение специальной address-family: "address-family l2vpn evpn"
-  ]
-}
     {
       id: 3202,
       author: 'Елена К.',
@@ -2136,7 +2134,439 @@ const INITIAL_FORUM_DATA = {
   ]
 },
 {
-        
+  id: 59,
+  categoryId: 'aci',
+  title: 'ACI и VMware NSX-V на одной инфраструктуре',
+  author: 'Валентин К.',
+  date: '2025-03-23T14:15:00',
+  views: 289,
+  replies: 8,
+ content: `Пытаемся настроить сосуществование ACI и NSX-V на одной физической инфраструктуре для поэтапной миграции. На фабрике ACI настроен Opflex integration domain, но возникают проблемы с передачей VLAN на ESXi хосты с NSX-V. В логах вижу ошибку "EPG VLAN provisioning failed". Как корректно настроить эту интеграцию?`,
+  tags: ['ACI', 'NSX-V', 'миграция', 'Opflex'],
+  solved: true,
+  likes: 21,
+  comments: [
+    {
+      id: 5901,
+      author: 'Дмитрий Е.',
+      date: '2025-03-23T15:00:00',
+      content: 'Для сосуществования ACI и NSX-V рекомендуется использовать не Opflex, а статические VLAN binding. Создайте отдельный VLAN pool для NSX-V с режимом Static Allocation.',
+      likes: 17
+    },
+    {
+      id: 5902,
+      author: 'Анастасия Р.',
+      date: '2025-03-23T16:25:00',
+      content: 'Также требуется создать специальный VMM домен с provider "VMware" и отключенной опцией "OpFlex". В этом домене настройте статические привязки EPG к VLAN.',
+      likes: 14
+    },
+    {
+      id: 5903,
+      author: 'Владислав К.',
+      date: '2025-03-23T17:50:00',
+      content: 'Ошибка "EPG VLAN provisioning failed" часто возникает из-за конфликта VLAN ID. Убедитесь, что VLAN ID, используемые для NSX-V, не пересекаются с динамическими VLAN в других VMM доменах.',
+      likes: 19
+    }
+  ]
+},
+{
+  id: 60,
+  categoryId: 'networking',
+  title: 'Catalyst 9500 - проблема с load-balancing SDM шаблоном',
+  author: 'Инна Л.',
+  date: '2025-03-08T13:10:00',
+  views: 267,
+  replies: 6,
+  content: `После обновления IOS XE на Catalyst 9500 до версии 17.9.1, возникла проблема с распределением трафика в port-channel. В логах вижу сообщение "FED-2-FEATURE_INSTALL_FAILED: R0/0: fed: ". Port-channel работает, но весь трафик идет только через один физический интерфейс. Что может быть причиной?`,
+  tags: ['Catalyst 9500', 'load-balancing', 'SDM', 'port-channel'],
+  solved: true,
+  likes: 18,
+  comments: [
+    {
+      id: 6001,
+      author: 'Виктор П.',
+      date: '2025-03-08T13:55:00',
+      content: 'В IOS XE 17.9.1 изменилась структура SDM шаблонов. Для корректной работы load-balancing в port-channel требуется применить команду "sdm prefer default" и перезагрузить коммутатор.',
+      likes: 15
+    },
+    {
+      id: 6002,
+      author: 'Ольга С.',
+      date: '2025-03-08T15:20:00',
+      content: 'Также проверьте настройки EtherChannel load-balancing. В версии 17.9.1 рекомендуется использовать расширенный алгоритм: "port-channel load-balance extended src-dst-ip".',
+      likes: 12
+    },
+    {
+      id: 6003,
+      author: 'Артем Н.',
+      date: '2025-03-08T16:45:00',
+      content: 'Ошибка "FEATURE_INSTALL_FAILED" также может указывать на проблемы с лицензированием. Проверьте, что на коммутаторе активирована лицензия Network Advantage, которая требуется для расширенных функций port-channel.',
+      likes: 16
+    }
+  ]
+},
+{
+  id: 61,
+  categoryId: 'security',
+  title: 'FTD и IPS правила - высокая загрузка CPU',
+  author: 'Кирилл М.',
+  date: '2025-03-03T11:15:00',
+  views: 298,
+  replies: 8,
+  content: `После активации политики IPS на FTD 4110, наблюдается высокая загрузка CPU (более 80%). В логах много сообщений "Snort Instance X CPU Utilization is high". При отключении политики IPS загрузка возвращается в норму. Как оптимизировать работу IPS без отключения защиты?`,
+  tags: ['FTD', 'IPS', 'CPU', 'Snort'],
+  solved: true,
+  likes: 23,
+  comments: [
+    {
+      id: 6101,
+      author: 'Александр О.',
+      date: '2025-03-03T12:00:00',
+      content: 'Проверьте настройки инспекции трафика. Для снижения нагрузки рекомендуется использовать переменные сети в IPS политике, чтобы ограничить инспекцию только необходимыми подсетями.',
+      likes: 19
+    },
+    {
+      id: 6102,
+      author: 'Елена Д.',
+      date: '2025-03-03T13:25:00',
+      content: 'Также рекомендуется настроить фильтрацию правил IPS. Используйте подход с базовыми категориями (например, "Balanced Security and Connectivity") и отключите правила с низким приоритетом.',
+      likes: 16
+    },
+    {
+      id: 6103,
+      author: 'Михаил Т.',
+      date: '2025-03-03T14:50:00',
+      content: 'Проверьте настройки Snort в пользовательской сети. В FTD 4110 можно увеличить количество экземпляров Snort для параллельной обработки трафика. Используйте команду "show snort instance resource usage" для проверки текущей конфигурации.',
+      likes: 21
+    }
+  ]
+},
+{
+  id: 62,
+  categoryId: 'ucs',
+  title: 'UCS Central и UCS Manager синхронизация политик',
+  author: 'Валерия С.',
+  date: '2025-03-19T10:05:00',
+  views: 245,
+  replies: 6,
+  content: `После регистрации UCS домена в UCS Central, локальные политики не синхронизируются. В логах UCS Central вижу ошибку "Policy resolution failed: insufficient rights". Глобальные политики применяются корректно, но локальные не импортируются. Как решить эту проблему?`,
+  tags: ['UCS Central', 'UCS Manager', 'политики', 'синхронизация'],
+  solved: false,
+  likes: 17,
+  comments: [
+    {
+      id: 6201,
+      author: 'Дмитрий Л.',
+      date: '2025-03-19T10:50:00',
+      content: 'Проверьте настройки Policy Resolution Control в UCS Central. Для импорта локальных политик требуется явно указать категории политик, которые нужно импортировать.',
+      likes: 14
+    },
+    {
+      id: 6202,
+      author: 'Олег П.',
+      date: '2025-03-19T12:15:00',
+      content: 'Также проверьте роль пользователя, который использовался для регистрации UCS домена в Central. Для полной синхронизации политик требуется роль не ниже "admin".',
+      likes: 11
+    },
+    {
+      id: 6203,
+      author: 'Татьяна К.',
+      date: '2025-03-19T13:40:00',
+      content: 'Проблема может быть также в конфликтах имен политик. Если в UCS Central уже существуют политики с такими же именами, как в UCS Manager, импорт не будет выполнен. Попробуйте изменить режим разрешения конфликтов в настройках UCS Central.',
+      likes: 15
+    }
+  ]
+},
+{
+  id: 63,
+  categoryId: 'wireless',
+  title: 'WLC 9800 и mDNS прокси - проблема с Apple AirPlay',
+  author: 'Алиса Г.',
+  date: '2025-03-12T15:30:00',
+  views: 289,
+  replies: 7,
+  content: `После настройки mDNS прокси на WLC 9800, устройства Apple не могут обнаруживать AirPlay на разных подсетях. В логах вижу сообщение "mDNS service query dropped". При этом другие mDNS сервисы (например, Chromecast) работают нормально. Что может быть причиной?`,
+  tags: ['WLC 9800', 'mDNS', 'Apple', 'AirPlay'],
+  solved: true,
+  likes: 20,
+  comments: [
+    {
+      id: 6301,
+      author: 'Станислав Ф.',
+      date: '2025-03-12T16:15:00',
+      content: 'Проверьте настройки mDNS service-policy. Для Apple AirPlay требуется явно добавить сервис "airplay" в список разрешенных сервисов. По умолчанию он может быть не включен.',
+      likes: 17
+    },
+    {
+      id: 6302,
+      author: 'Вера М.',
+      date: '2025-03-12T17:40:00',
+      content: 'Также Apple AirPlay использует несколько mDNS сервисов одновременно. Помимо "airplay" требуется добавить "raop" и "airplay-source" в список разрешенных сервисов.',
+      likes: 14
+    },
+    {
+      id: 6303,
+      author: 'Григорий П.',
+      date: '2025-03-12T19:05:00',
+      content: 'Проблема может быть также в настройках Location Specific Services. В WLC 9800 требуется настроить расположение (location) для каждой подсети, где требуется работа mDNS.',
+      likes: 19
+    }
+  ]
+},
+{
+  id: 64,
+  categoryId: 'aci',
+  title: 'ACI и Terraform - проблема с применением конфигурации',
+  author: 'Никита Р.',
+  date: '2025-03-07T09:25:00',
+  views: 267,
+  replies: 6,
+  content: `При использовании Terraform для автоматизации конфигурации ACI, возникают проблемы с применением изменений. Terraform-apply выполняется с ошибкой "Error creating object: API Error". При этом те же изменения через GUI проходят успешно. Версия Terraform - 1.5.0, провайдер aci версии 2.6.0. Что может быть причиной?`,
+  tags: ['ACI', 'Terraform', 'автоматизация', 'API'],
+  solved: true,
+  likes: 18,
+  comments: [
+    {
+      id: 6401,
+      author: 'Сергей З.',
+      date: '2025-03-07T10:10:00',
+      content: 'Проверьте уровень доступа пользователя, от имени которого работает Terraform. Для полной автоматизации конфигурации требуется роль "admin", роль "read-write" может не иметь прав на создание некоторых объектов.',
+      likes: 15
+    },
+    {
+      id: 6402,
+      author: 'Мария Е.',
+      date: '2025-03-07T11:35:00',
+      content: 'Ошибка "API Error" часто возникает из-за проблем с зависимостями в Terraform. Убедитесь, что объекты создаются в правильном порядке, используя depends_on в ресурсах Terraform.',
+      likes: 12
+    },
+    {
+      id: 6403,
+      author: 'Дмитрий Н.',
+      date: '2025-03-07T13:00:00',
+      content: 'Провайдер aci версии 2.6.0 имеет известную проблему с созданием некоторых объектов на ACI 6.0+. Обновите провайдер до версии 2.6.1 или выше, где эта проблема исправлена.',
+      likes: 16
+    }
+  ]
+},
+{
+  id: 65,
+  categoryId: 'networking',
+  title: 'IOS XE - проблема с BGP Add-Path на ISR 4451',
+  author: 'Владимир П.',
+  date: '2025-03-17T14:35:00',
+  views: 278,
+  replies: 7,
+  content: `После настройки BGP Add-Path на маршрутизаторах ISR 4451, дополнительные пути не анонсируются. В логах вижу сообщение "Additional Paths not advertised: no available paths match selection criteria". Версия IOS XE - 17.3.3. Как исправить эту проблему?`,
+  tags: ['ISR 4451', 'BGP', 'Add-Path', 'маршрутизация'],
+  solved: true,
+  likes: 21,
+  comments: [
+    {
+      id: 6501,
+      author: 'Алексей Т.',
+      date: '2025-03-17T15:20:00',
+      content: 'Проверьте настройки route-map для выбора дополнительных путей. В IOS XE для работы Add-Path требуется явно указать дополнительные пути с помощью route-map и команды "set path-selection all advertise".',
+      likes: 18
+    },
+    {
+      id: 6502,
+      author: 'Светлана К.',
+      date: '2025-03-17T16:45:00',
+      content: 'Также убедитесь, что на обоих маршрутизаторах в BGP конфигурации включена отправка и прием дополнительных путей: "neighbor x.x.x.x additional-paths send receive".',
+      likes: 15
+    },
+    {
+      id: 6503,
+      author: 'Иван С.',
+      date: '2025-03-17T18:10:00',
+      content: 'В IOS XE 17.3.3 также требуется включить Add-Path на уровне address-family: "bgp additional-paths select all" и "bgp additional-paths install". Без этих команд дополнительные пути не будут анонсироваться.',
+      likes: 20
+    }
+  ]
+},
+{
+  id: 66,
+  categoryId: 'security',
+  title: 'Stealthwatch и Secure Network Analytics - проблема с Flow Collectors',
+  author: 'Наталья Ш.',
+  date: '2025-03-21T09:45:00',
+  views: 256,
+  replies: 6,
+  content: `После обновления Cisco Secure Network Analytics (бывший Stealthwatch) до версии 7.4.1, Flow Collector перестал принимать NetFlow от некоторых маршрутизаторов. В логах вижу сообщение "NetFlow cache full, dropping flows". Настройки не менялись. Что может быть причиной?`,
+  tags: ['Stealthwatch', 'Secure Network Analytics', 'NetFlow', 'Flow Collector'],
+  solved: false,
+  likes: 19,
+  comments: [
+    {
+      id: 6601,
+      author: 'Александр Е.',
+      date: '2025-03-21T10:30:00',
+      content: 'В версии 7.4.1 изменились требования к размеру кэша NetFlow. Проверьте настройки Flow Collector в разделе "Configuration > Advanced Settings" и увеличьте параметр "Maximum cache size" до рекомендуемого значения.',
+      likes: 16
+    },
+    {
+      id: 6602,
+      author: 'Ольга Н.',
+      date: '2025-03-21T11:55:00',
+      content: 'Проблема также может быть в формате NetFlow от маршрутизаторов. В версии 7.4.1 по умолчанию отключена поддержка устаревших форматов NetFlow (v5). Проверьте, какую версию NetFlow используют ваши маршрутизаторы.',
+      likes: 13
+    },
+    {
+      id: 6603,
+      author: 'Вадим М.',
+      date: '2025-03-21T13:20:00',
+      content: 'В новой версии также добавлена функция Rate Limiting для входящих потоков. Проверьте настройки "Rate Limiting" в разделе "Configuration > Advanced Settings > Collection" и увеличьте лимит, если он слишком низкий.',
+      likes: 17
+    }
+  ]
+},
+{
+  id: 67,
+  categoryId: 'ucs',
+  title: 'UCS Manager - проблема с Fibre Channel Zoning',
+  author: 'Павел Д.',
+  date: '2025-03-05T15:15:00',
+  views: 234,
+  replies: 5,
+  content: `После обновления UCS Manager до версии 4.2, перестала работать FC Zoning. В логах вижу ошибку "Zoning commit failed: not a VSAN capable device". Настройка FC Switching Mode установлена в "Switch", FC Zoning на VPC правильно настроен. Что может быть причиной?`,
+  tags: ['UCS Manager', 'Fibre Channel', 'Zoning', 'VSAN'],
+  solved: true,
+  likes: 16,
+  comments: [
+    {
+      id: 6701,
+      author: 'Антон Б.',
+      date: '2025-03-05T16:00:00',
+      content: 'Проверьте настройки VSAN на Fabric Interconnect. В версии 4.2 изменился способ настройки FC Zoning, требуется явно указать fc-uplink порты в нужном VSAN.',
+      likes: 13
+    },
+    {
+      id: 6702,
+      author: 'Ирина В.',
+      date: '2025-03-05T17:25:00',
+      content: 'Ошибка "not a VSAN capable device" часто возникает из-за неправильной настройки FC режима на аплинках. Убедитесь, что режим портов установлен в "FC Uplink", а не "FC Storage".',
+      likes: 10
+    },
+    {
+      id: 6703,
+      author: 'Сергей Т.',
+      date: '2025-03-05T18:50:00',
+      content: 'В UCS Manager 4.2 также добавилась функция FC Zoning Policies. Попробуйте создать новую политику FC Zoning и применить ее к VSAN, вместо прямой настройки зонирования.',
+      likes: 14
+    }
+  ]
+},
+{
+  id: 68,
+  categoryId: 'wireless',
+  title: 'DNA Center и Prime Infrastructure миграция',
+  author: 'Елена О.',
+  date: '2025-03-10T11:55:00',
+  views: 287,
+  replies: 7,
+  content: `Пытаемся мигрировать с Cisco Prime Infrastructure 3.9 на DNA Center 2.3.5. При использовании Migrate Tool возникает ошибка "Migration failed: cannot import wireless settings". Беспроводная сеть состоит из WLC 5520 и WLC 9800. Как решить эту проблему?`,
+  tags: ['DNA Center', 'Prime Infrastructure', 'миграция', 'WLC'],
+  solved: true,
+  likes: 22,
+  comments: [
+    {
+      id: 6801,
+      author: 'Дмитрий И.',
+      date: '2025-03-10T12:40:00',
+      content: 'Проблема может быть в смешанной инфраструктуре WLC. Migrate Tool поддерживает либо только AireOS (WLC 5520), либо только IOS-XE (WLC 9800) при одной миграции. Попробуйте выполнить миграцию в два этапа, сначала для WLC 5520, затем для 9800.',
+      likes: 18
+    },
+    {
+      id: 6802,
+      author: 'Наталья К.',
+      date: '2025-03-10T14:05:00',
+      content: 'Также проверьте версию WLC 5520. Для миграции на DNA Center 2.3.5 требуется версия не ниже 8.10 на AireOS контроллерах.',
+      likes: 15
+    },
+    {
+      id: 6803,
+      author: 'Виктор Г.',
+      date: '2025-03-10T15:30:00',
+      content: 'В DNA Center 2.3.5 есть известная проблема с импортом шаблонов RF Profile из Prime Infrastructure. Перед миграцией экспортируйте RF Profiles отдельно и импортируйте их вручную после основной миграции.',
+      likes: 20
+    }
+  ]
+},
+{
+  id: 69,
+  categoryId: 'aci',
+  title: 'ACI - проблема со Switch Upgrade на Mini ACI',
+  author: 'Тимур К.',
+  date: '2025-03-24T16:05:00',
+  views: 245,
+  replies: 6,
+  content: `При попытке обновить прошивку на Mini ACI (2 Leaf и 1 Spine), возникает ошибка "Node in use by other jobs, cannot upgrade". Все контроллеры APIC обновлены успешно, проблема только с коммутаторами. Что может быть причиной?`,
+  tags: ['ACI', 'Mini ACI', 'Switch Upgrade', 'прошивка'],
+  solved: true,
+  likes: 17,
+  comments: [
+    {
+      id: 6901,
+      author: 'Алексей Р.',
+      date: '2025-03-24T16:50:00',
+      content: 'Проверьте, нет ли запущенных задач диагностики или сбора логов. В Mini ACI нельзя выполнять несколько операций техобслуживания одновременно. Используйте команду "show firmware jobs" для проверки активных задач.',
+      likes: 14
+    },
+    {
+      id: 6902,
+      author: 'Светлана Д.',
+      date: '2025-03-24T18:15:00',
+      content: 'Ошибка "Node in use by other jobs" часто возникает, если предыдущая задача обновления была прервана. Попробуйте перезагрузить APIC контроллер и повторить попытку обновления.',
+      likes: 11
+    },
+    {
+      id: 6903,
+      author: 'Константин Ж.',
+      date: '2025-03-24T19:40:00',
+      content: 'В Mini ACI также рекомендуется обновлять коммутаторы по одному, а не группой. Создайте отдельную задачу обновления для каждого коммутатора с интервалом не менее 30 минут между обновлениями.',
+      likes: 15
+    }
+  ]
+},
+{
+  id: 70,
+  categoryId: 'networking',
+  title: 'Catalyst 9300 - проблема с Conditional Debugging',
+  author: 'Игорь Ф.',
+  date: '2025-03-16T08:25:00',
+  views: 234,
+  replies: 5,
+  content: `При попытке настроить Conditional Debugging на коммутаторе Catalyst 9300, возникает ошибка "Conditional Debugging not supported on this platform". Версия IOS XE - 17.6.1. Согласно документации, эта функция должна поддерживаться с версии 16.9. В чем может быть проблема?`,
+  tags: ['Catalyst 9300', 'Conditional Debugging', 'IOS XE', 'отладка'],
+  solved: false,
+  likes: 15,
+  comments: [
+    {
+      id: 7001,
+      author: 'Марина Д.',
+      date: '2025-03-16T09:10:00',
+      content: 'Проверьте модель Catalyst 9300. Conditional Debugging поддерживается не на всех моделях серии 9300. На некоторых упрощенных моделях (например, C9300L) эта функция не доступна.',
+      likes: 12
+    },
+    {
+      id: 7002,
+      author: 'Виктор С.',
+      date: '2025-03-16T10:35:00',
+      content: 'Также проверьте лицензию на коммутаторе. Для работы Conditional Debugging требуется лицензия Network Advantage, с лицензией Network Essentials эта функция недоступна.',
+      likes: 9
+    },
+    {
+      id: 7003,
+      author: 'Анастасия Т.',
+      date: '2025-03-16T12:00:00',
+      content: 'В версии 17.6.1 есть известная проблема с Conditional Debugging на некоторых ревизиях железа. Попробуйте обновиться до версии 17.6.3 или выше, где эта проблема исправлена.',
+      likes: 13
+    }
+  ]
+}
+
+
   ]
 };
 
@@ -2677,6 +3107,3 @@ export default function Community() {
     </div>
   );
 }
-
-  ]
-};
