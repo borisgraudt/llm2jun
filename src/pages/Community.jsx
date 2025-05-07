@@ -1,4 +1,3 @@
-// src/pages/Community.jsx
 import { useState, useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -2950,3 +2949,6 @@ export default function Community() {
 }
 
   ]
+
+// src/pages/Community.jsx
+};
