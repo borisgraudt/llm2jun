@@ -1179,14 +1179,14 @@ const INITIAL_FORUM_DATA = {
       id: 3202,
       author: 'Елена К.',
       date: '2025-03-14T17:50:00',
-      content: 'Проверьте также конфигурацию BGP EVPN. На Catalyst 9500 требуется явное включение специальной address-family: "address-family l2vpn evpn"
+      content: `Проверьте также конфигурацию BGP EVPN. На Catalyst 9500 требуется явное включение специальной address-family: "address-family l2vpn evpn"`
   ]
 }
     {
       id: 3202,
       author: 'Елена К.',
       date: '2025-03-14T17:50:00',
-      content: 'Проверьте также конфигурацию BGP EVPN. На Catalyst 9500 требуется явное включение специальной address-family: "address-family l2vpn evpn" и настройка route-target import/export.',
+      content: `Проверьте также конфигурацию BGP EVPN. На Catalyst 9500 требуется явное включение специальной address-family: "address-family l2vpn evpn" и настройка route-target import/export.',`
       likes: 15
     },
     {
