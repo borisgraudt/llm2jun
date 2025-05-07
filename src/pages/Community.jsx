@@ -2120,9 +2120,7 @@ const INITIAL_FORUM_DATA = {
     }
   ]
 },
-{
-        
-  ]
+
 };
 
 export default function Community() {
