@@ -207,6 +207,7 @@ const INITIAL_FORUM_DATA = {
           content: 'Если не помогает переинициализация, то возможно повреждение образа. Попробуйте восстановить через TFTP.',
           likes: 6
         }
+        ]
         // Additional forum threads data to add to your INITIAL_FORUM_DATA object in Community.jsx
 // Add these to the 'threads' array in your existing data
 
