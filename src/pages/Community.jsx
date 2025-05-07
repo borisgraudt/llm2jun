@@ -265,8 +265,7 @@ const INITIAL_FORUM_DATA = {
       content: 'Проверьте значения MTU на обоих интерфейсах. Они должны совпадать. Используйте команду "show interface GigabitEthernet0/0/1" и сравните с соседним устройством.',
       likes: 4
     },
-  ]
-};
+,
 {
   id: 7,
   categoryId: 'networking',
@@ -285,6 +284,8 @@ const INITIAL_FORUM_DATA = {
       author: 'Сергей Н.',
       date: '2025-02-18T15:50:00',
       content: 'Проверьте значения MTU на обоих интерфейсах. Они должны совпадать. Используйте команду "show interface GigabitEthernet0/0/1" и сравните с соседним устройством.',
+      likes: 4
+    },
       likes: 4
     },
     {
