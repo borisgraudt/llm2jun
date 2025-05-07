@@ -207,12 +207,10 @@ const INITIAL_FORUM_DATA = {
           content: 'Если не помогает переинициализация, то возможно повреждение образа. Попробуйте восстановить через TFTP.',
           likes: 6
         }
-        ]
         // Additional forum threads data to add to your INITIAL_FORUM_DATA object in Community.jsx
 // Add these to the 'threads' array in your existing data
 
 // Additional threads for networking category
-    }
 {
   id: 6,
   categoryId: 'networking',
@@ -1121,7 +1119,7 @@ const INITIAL_FORUM_DATA = {
       date: '2025-03-19T14:15:00',
       content: 'Проверьте также настройки MMIO в BIOS. Для NVIDIA T4 требуется установить "Above 4G Decoding" в значение Enabled и "SR-IOV Support" в Enabled.',
       likes: 21
-    }
+    },
     {
   id: 31,
   categoryId: 'security',
@@ -2679,3 +2677,6 @@ export default function Community() {
     </div>
   );
 }
+
+  ]
+};
