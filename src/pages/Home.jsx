@@ -1,400 +1,387 @@
-// src/pages/Home.jsx
-import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+/* src/index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-export default function Home() {
-  const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState('chat')
-  const [expertMode, setExpertMode] = useState(false)
-  const [message, setMessage] = useState('')
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [showMobileSidebar, setShowMobileSidebar] = useState(false)
+/* Custom styles */
+body {
+  @apply bg-white text-gray-800 font-sans;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out forwards;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.slide-up {
+  animation: slideUp 0.3s ease-out forwards;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+/* Form elements */
+input, textarea {
+  @apply bg-white text-gray-800 rounded-md p-2 w-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300;
+}
+
+button {
+  @apply bg-gray-200 hover:bg-gray-300 text-black font-medium py-2 px-4 rounded transition-colors duration-200;
+}
+
+.button-secondary {
+  @apply bg-gray-200 hover:bg-gray-300 text-gray-800;
+}
+
+/* Message styles */
+.message {
+  @apply max-w-md p-3 rounded-lg mb-2;
+}
+
+.message-user {
+  @apply bg-gray-300 text-gray-800 rounded-br-none ml-auto;
+}
+
+.message-ai {
+  @apply bg-gray-100 text-gray-800 rounded-bl-none;
+}
+
+/* Tab styles */
+.tab-active {
+  @apply text-gray-600 border-b-2 border-gray-400;
+}
+
+.tab-inactive {
+  @apply text-gray-500 hover:text-gray-600 transition;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400;
+}
+
+/* Typing indicator animation */
+.typing-indicator span {
+  @apply inline-block bg-gray-400 rounded-full w-2 h-2;
+  animation: bounce 1.4s infinite ease-in-out;
+}
+
+.typing-indicator span:nth-child(1) { animation-delay: 0s; }
+.typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+.typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-4px); }
+}
+
+/* AI/Expert toggle switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 34px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+  background-color: #555;
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(20px);
+}
+
+/* ChatGPT-style layout with improved responsiveness */
+.home-container {
+  display: flex;
+  height: 100vh;
+  min-height: 500px;
+  overflow: hidden;
+}
+
+/* Make the chat container responsive */
+.chat-messages-container {
+  flex: 1;
+  min-height: 200px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1rem;
+  scroll-behavior: smooth;
+}
+
+/* Empty state container with responsive sizing */
+.empty-state-container {
+  flex: 1;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Make sidebar responsive */
+.sidebar-chats {
+  height: calc(100vh - 130px);
+  min-height: 150px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+/* Sidebar styling */
+.sidebar-chats::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-chats::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-chats::-webkit-scrollbar-thumb {
+  background-color: #d1d5db;
+  border-radius: 20px;
+}
+
+/* For Firefox */
+.sidebar-chats {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+}
+
+/* Chat item styling */
+.chat-item {
+  transition: background-color 0.2s ease;
+}
+
+.chat-item:hover {
+  background-color: #f3f4f6;
+}
+
+.chat-item.active {
+  background-color: #e5e7eb;
+}
+
+/* Make sure the input doesn't disappear */
+.chat-input-wrapper {
+  padding: 0.5rem 1rem;
+  background-color: white;
+  position: relative;
+  z-index: 10;
+}
+
+/* Add overflow protection to chat messages */
+.chat-message {
+  word-break: break-word;
+  max-width: 100%;
+}
+
+/* Main content area */
+.main-content-area {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Ensure content is centered in all views */
+.max-w-3xl {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* AI/Expert toggle in search bar row */
+.search-toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+/* Styling for the toggle container in the controls bar */
+.toggle-container {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+}
+
+/* Responsive fixes for small screens */
+@media (max-height: 600px) {
+  .sidebar-chats {
+    height: calc(100vh - 110px);
+  }
   
-  // Chat history management
-  const [chats, setChats] = useState([
-    { id: 'chat1', title: 'Проблема на WS-C9300-24P-A', messages: [] },
-    { id: 'chat2', title: 'Настройка VPN на Juniper', messages: [
-      { role: 'user', content: 'Как настроить VPN на Juniper SRX?' },
-      { role: 'assistant', content: 'Для настройки VPN на Juniper SRX, вам необходимо выполнить следующие шаги...' }
-    ]},
-    { id: 'chat3', title: 'Обновление прошивки', messages: [
-      { role: 'user', content: 'Как обновить прошивку на Cisco Catalyst?' },
-      { role: 'assistant', content: 'Для обновления прошивки на Cisco Catalyst вам потребуется...' }
-    ]}
-  ])
+  .chat-messages-container {
+    padding: 0.5rem;
+  }
   
-  const [activeChat, setActiveChat] = useState('chat1')
-  const messagesEndRef = useRef(null)
-
-  // Check authentication
-  useEffect(() => {
-    if (localStorage.getItem('auth') !== 'true') {
-      navigate('/')
-    }
-  }, [navigate])
-
-  // Animation effect when component mounts
-  useEffect(() => {
-    const homeContainer = document.querySelector('.home-container')
-    if (homeContainer) {
-      homeContainer.classList.add('fade-in')
-    }
-  }, [])
-
-  // Scroll to bottom when messages update
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
-    }
-  }, [chats, activeChat])
-
-  const logout = () => {
-    localStorage.removeItem('auth')
-    navigate('/')
+  .chat-input-wrapper {
+    padding: 0.25rem 0.5rem;
   }
-
-  // Get current chat
-  const currentChat = chats.find(chat => chat.id === activeChat) || chats[0]
-
-  // Create new chat
-  const createNewChat = () => {
-    const newChatId = `chat${Date.now()}`
-    const newChat = {
-      id: newChatId,
-      title: 'Новый запрос',
-      messages: []
-    }
-    
-    setChats([newChat, ...chats])
-    setActiveChat(newChatId)
-    setMessage('')
-
-    // Close mobile sidebar after creating new chat
-    if (window.innerWidth < 768) {
-      setShowMobileSidebar(false)
-    }
+  
+  .empty-state-container h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
   }
+}
 
-  // Simulate sending message and getting a response
-  const sendMessage = () => {
-    if (!message.trim()) return
-
-    // Add user message to current chat
-    const updatedChats = chats.map(chat => {
-      if (chat.id === activeChat) {
-        return {
-          ...chat,
-          messages: [...chat.messages, { role: 'user', content: message }]
-        }
-      }
-      return chat
-    })
-    
-    setChats(updatedChats)
-    
-    // Update chat title if it's the first message
-    if (currentChat.messages.length === 0) {
-      const updatedChatsWithTitle = updatedChats.map(chat => {
-        if (chat.id === activeChat) {
-          return {
-            ...chat,
-            title: message.length > 25 ? message.substring(0, 25) + '...' : message
-          }
-        }
-        return chat
-      })
-      setChats(updatedChatsWithTitle)
-    }
-    
-    setMessage('')
-    
-    // Simulate AI response
-    setTimeout(() => {
-      const responseText = expertMode
-        ? 'Ваш запрос был направлен специалисту по сетевому оборудованию. Ожидайте ответа в течение 15 минут.'
-        : 'Это симуляция ответа от системы. Для получения реальной технической поддержки требуется интеграция с базой знаний.'
-      
-      const chatsWithResponse = chats.map(chat => {
-        if (chat.id === activeChat) {
-          return {
-            ...chat,
-            messages: [...chat.messages, { role: 'user', content: message }, { role: 'assistant', content: responseText }]
-          }
-        }
-        return chat
-      })
-      
-      setChats(chatsWithResponse)
-    }, 1500)
+/* Small mobile screens */
+@media (max-width: 640px) {
+  .chat-messages-container {
+    padding: 0.5rem;
   }
+  
+  .empty-state-container {
+    padding: 1rem 0.5rem;
+  }
+  
+  .chat-input-wrapper {
+    padding: 0.5rem;
+  }
+  
+  /* Make search and toggle stack on very small screens */
+  .search-toggle-row {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+}
 
-  return (
-    <div className="home-container opacity-0 transition-opacity duration-1000 flex h-screen overflow-hidden bg-white text-gray-800">
-      {/* Mobile sidebar backdrop */}
-      {showMobileSidebar && (
-        <div 
-          className="md:hidden fixed inset-0 z-10 bg-black bg-opacity-50"
-          onClick={() => setShowMobileSidebar(false)}
-        ></div>
-      )}
-      
-      {/* Sidebar */}
-      <div className={`
-        ${sidebarOpen ? 'w-64' : 'w-0'} 
-        ${showMobileSidebar ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} 
-        fixed md:relative z-20 h-full transition-all duration-300 ease-in-out
-        bg-gray-100 border-r border-gray-200 flex flex-col overflow-hidden
-      `}>
-        <div className="p-4 border-b border-gray-200 flex items-center shrink-0">
-          <div className="w-8 h-8 mr-2">
-            <img 
-              src="/images/logo.png" 
-              alt="Logo" 
-              className="w-full h-full object-contain" 
-            />
-          </div>
-          <h1 className="text-xl font-semibold">Техподдержка</h1>
-        </div>
-        
-        <div className="p-3 shrink-0">
-          <button 
-            onClick={createNewChat}
-            className="w-full flex items-center justify-center py-2 px-3 border border-gray-300 rounded-md hover:bg-gray-200 transition-colors"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            Новый чат
-          </button>
-        </div>
-        
-        <div className="flex-1 overflow-y-auto sidebar-chats">
-          {chats.map(chat => (
-            <div 
-              key={chat.id}
-              onClick={() => {
-                setActiveChat(chat.id);
-                if (window.innerWidth < 768) {
-                  setShowMobileSidebar(false);
-                }
-              }}
-              className={`p-3 cursor-pointer hover:bg-gray-200 transition-colors border-b border-gray-200 chat-item ${
-                activeChat === chat.id ? 'active' : ''
-              }`}
-            >
-              <div className="flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                </svg>
-                <span className="text-sm truncate">{chat.title}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-      
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden main-content-area">
-        {/* Header */}
-        <header className="bg-gray-100 border-b border-gray-200 p-3 flex justify-between items-center shrink-0">
-          <div className="flex items-center">
-            {/* Mobile menu button */}
-            <button
-              className="md:hidden mr-2 text-gray-600"
-              onClick={() => setShowMobileSidebar(!showMobileSidebar)}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-            
-            {/* Desktop sidebar toggle */}
-            <button
-              className="hidden md:block mr-2 text-gray-600"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-            
-            {/* Tabs */}
-            <div className="flex">
-              <button 
-                onClick={() => setActiveTab('chat')} 
-                className={`px-4 py-2 font-medium transition-colors duration-200 ${
-                  activeTab === 'chat' 
-                    ? 'text-gray-600 border-b-2 border-gray-400' 
-                    : 'text-gray-500 hover:text-gray-600'
-                }`}
-              >
-                Чат
-              </button>
-              <button 
-                onClick={() => setActiveTab('community')} 
-                className={`px-4 py-2 font-medium transition-colors duration-200 ${
-                  activeTab === 'community' 
-                    ? 'text-gray-600 border-b-2 border-gray-400' 
-                    : 'text-gray-500 hover:text-gray-600'
-                }`}
-              >
-                Сообщество
-              </button>
-            </div>
-          </div>
-          
-          <button 
-            onClick={logout} 
-            className="text-gray-600 hover:text-gray-800 px-4 py-2 rounded-md"
-          >
-            Выйти
-          </button>
-        </header>
+/* Fix specific layout issues */
+@media (min-width: 768px) and (max-height: 800px) {
+  .sidebar-chats {
+    height: calc(100vh - 120px);
+  }
+  
+  .chat-messages-container {
+    min-height: 150px;
+  }
+}
 
-        {/* Content */}
-        <div className="flex-1 overflow-hidden">
-          {activeTab === 'chat' ? (
-            <div className="flex flex-col h-full">
-              <div className="flex-1 flex flex-col items-center overflow-hidden">
-                <div className="flex flex-col w-full max-w-3xl h-full">
-                  {currentChat.messages.length === 0 ? (
-                    <div className="flex-1 flex items-center justify-center text-center px-4 py-4 md:py-8 overflow-auto empty-state-container">
-                      <div className="max-w-2xl w-full">
-                        <h2 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8 text-gray-800">Опишите свою проблему</h2>
-                        <div className="flex rounded-lg border border-gray-300 overflow-hidden">
-                          <input
-                            type="text"
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                            placeholder="Проблема с потерей пакетов на Cisco WS-C9300-24P-A"
-                            className="flex-1 px-4 py-3 focus:outline-none text-gray-800"
-                          />
-                          <button
-                            onClick={sendMessage}
-                            disabled={!message.trim()}
-                            className={`px-4 bg-gray-200 text-black transition-colors ${
-                              message.trim() ? 'hover:bg-gray-300' : 'opacity-50 cursor-not-allowed'
-                            }`}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                              <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-                            </svg>
-                          </button>
-                        </div>
-                      
-                        <div className="flex flex-wrap justify-center mt-4 gap-2">
-                          <button className="text-gray-500 text-sm border border-gray-300 rounded-md px-3 py-2 hover:bg-gray-50">
-                            <span className="flex items-center">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                              </svg>
-                              Поиск
-                            </span>
-                          </button>
-                          
-                          <button className="text-gray-500 text-sm border border-gray-300 rounded-md px-3 py-2 hover:bg-gray-50">
-                            <span className="flex items-center">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                              </svg>
-                              Глубокое исследование
-                            </span>
-                          </button>
-                          
-                          <button className="text-gray-500 text-sm border border-gray-300 rounded-md px-3 py-2 hover:bg-gray-50">
-                            <span className="flex items-center">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                              </svg>
-                              Создать изображение
-                            </span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      {/* Messages List - Responsive height with scrolling */}
-                      <div className="flex-1 overflow-y-auto p-4 space-y-4 mb-2 chat-messages-container">
-                        {currentChat.messages.map((msg, index) => (
-                          <div 
-                            key={index}
-                            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                          >
-                            <div 
-                              className={`max-w-xs sm:max-w-md p-3 rounded-lg chat-message ${
-                                msg.role === 'user' 
-                                  ? 'bg-gray-300 text-gray-800 rounded-br-none' 
-                                  : 'bg-gray-100 text-gray-800 rounded-bl-none'
-                              }`}
-                            >
-                              {msg.content}
-                            </div>
-                          </div>
-                        ))}
-                        <div ref={messagesEndRef} />
-                      </div>
+/* Ensure interface is visible on very small screens */
+@media (max-height: 500px) {
+  .empty-state-container h2 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .chat-input-wrapper, .border-t {
+    padding: 0.25rem;
+  }
+  
+  .sidebar-chats {
+    max-height: 30vh;
+  }
+}
 
-                      {/* Message Input */}
-                      <div className="w-full mb-2 px-4 chat-input-wrapper">
-                        <div className="flex rounded-lg border border-gray-300 overflow-hidden">
-                          <input
-                            type="text"
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                            placeholder="Введите сообщение..."
-                            className="flex-1 px-4 py-3 focus:outline-none text-gray-800"
-                          />
-                          <button
-                            onClick={sendMessage}
-                            disabled={!message.trim()}
-                            className={`px-4 bg-gray-200 text-black transition-colors ${
-                              message.trim() ? 'hover:bg-gray-300' : 'opacity-50 cursor-not-allowed'
-                            }`}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                              <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-              
-              {/* AI/Expert Toggle */}
-              <div className="border-t border-gray-200 p-3 flex justify-center shrink-0">
-                <div className="flex items-center space-x-3">
-                  <span className={`text-sm ${!expertMode ? 'font-medium' : ''} text-gray-600`}>AI</span>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      className="sr-only peer" 
-                      checked={expertMode}
-                      onChange={() => setExpertMode(!expertMode)}
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-600"></div>
-                  </label>
-                  <span className={`text-sm ${expertMode ? 'font-medium' : ''} text-gray-600`}>Эксперт</span>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="p-4 md:p-6 flex justify-center overflow-auto">
-              <div className="w-full max-w-3xl">
-                <h2 className="text-xl font-semibold mb-4">Сообщество</h2>
-                <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
-                  <p className="text-center text-gray-600">Форум сообщества находится в разработке.</p>
-                  <p className="text-center text-gray-600 mt-2">Здесь будут отображаться вопросы и ответы от других пользователей.</p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
+/* Ensure mobile layout works */
+@media (max-width: 768px) {
+  .home-container {
+    flex-direction: column;
+  }
+  
+  .sidebar-chats {
+    max-height: 40vh;
+  }
+}
+
+/* Fix for Firefox scrolling */
+@-moz-document url-prefix() {
+  .chat-messages-container, .sidebar-chats {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db transparent;
+  }
+}
+
+/* Minimum dimensions for all containers */
+.home-container > * {
+  min-height: 0;
+  min-width: 0;
+}
+
+/* Force scrollbars when needed */
+.overflow-auto {
+  overflow: auto !important;
+}
+
+/* Ensure header and footer don't collapse */
+header, .chat-input-wrapper, .border-t {
+  flex-shrink: 0;
+}
+
+/* Fix heights for flex items */
+.flex-1 {
+  flex: 1 1 0%;
+  min-height: 0;
+}
+
+/* New chat animation */
+@keyframes fadeInChat {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.new-chat-animation {
+  animation: fadeInChat 0.3s ease-in-out forwards;
 }
