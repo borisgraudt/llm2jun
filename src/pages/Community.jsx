@@ -1,282 +1,3 @@
-import { useState, useEffect } from 'react';
-import { formatDistanceToNow } from 'date-fns';
-import { ru } from 'date-fns/locale';
-
-// Sample forum data based on Cisco community forums
-const INITIAL_FORUM_DATA = {
-  categories: [
-    { 
-      id: 'networking', 
-      name: 'Сетевое оборудование',
-      description: 'Обсуждение маршрутизаторов, коммутаторов и другого сетевого оборудования',
-      topics: 345,
-      posts: 1287
-    },
-    { 
-      id: 'security', 
-      name: 'Безопасность',
-      description: 'Решения безопасности, файрволы, VPN и соответствующие продукты',
-      topics: 189,
-      posts: 720 
-    },
-    { 
-      id: 'ucs', 
-      name: 'Unified Computing',
-      description: 'Unified Computing System (UCS), серверы и вычислительная инфраструктура',
-      topics: 112,
-      posts: 405
-    },
-    { 
-      id: 'aci', 
-      name: 'ACI и центры обработки данных',
-      description: 'Application Centric Infrastructure и технологии центров обработки данных',
-      topics: 98,
-      posts: 376
-    },
-    { 
-      id: 'wireless', 
-      name: 'Беспроводные технологии',
-      description: 'Беспроводные контроллеры, точки доступа и мобильные решения',
-      topics: 156,
-      posts: 612
-    },
-  ],
-  threads: [
-    {
-      id: 1,
-      categoryId: 'networking',
-      title: 'Cisco 2960X зависает при обновлении',
-      author: 'Алексей П.',
-      date: '2025-02-15T14:32:00',
-      views: 347,
-      replies: 12,
-      content: `У меня возникла проблема с коммутатором Cisco 2960X. При попытке обновления прошивки устройство зависает и не отвечает на команды. Пробовал различные версии прошивки, но результат одинаковый. Подскажите, как решить эту проблему?`,
-      tags: ['коммутаторы', 'обновление', '2960X', 'зависание'],
-      solved: true,
-      likes: 8,
-      comments: [
-        {
-          id: 101,
-          author: 'Максим В.',
-          date: '2025-02-15T15:10:00',
-          content: 'Попробуйте сначала сделать сброс настроек и очистить загрузочную флеш-память.',
-          likes: 2
-        },
-        {
-          id: 102,
-          author: 'Сергей О.',
-          date: '2025-02-15T16:05:00',
-          content: 'У нас была похожая проблема. Причина оказалась в недостаточном объеме памяти. Проверьте свободное место перед обновлением.',
-          likes: 5
-        },
-        {
-          id: 103,
-          author: 'Артем К.',
-          date: '2025-02-16T09:22:00',
-          content: 'Судя по описанию, это может быть известный баг в определенных версиях прошивки. Проверьте в документации Cisco список совместимости и известные проблемы.',
-          likes: 7
-        }
-      ]
-    },
-    {
-      id: 2,
-      categoryId: 'aci',
-      title: 'Показатель Health Score в Cisco ACI не меняется',
-      author: 'Ирина С.',
-      date: '2025-03-01T10:15:00',
-      views: 215,
-      replies: 7,
-      content: `После обновления инфраструктуры ACI до версии 5.2(3), показатель Health Score перестал обновляться и остается постоянным на уровне 100, несмотря на возникающие проблемы. Логи системы не показывают ошибок. Кто-нибудь сталкивался с подобной проблемой?`,
-      tags: ['ACI', 'мониторинг', 'health score', 'обновление'],
-      solved: false,
-      likes: 5,
-      comments: [
-        {
-          id: 201,
-          author: 'Дмитрий Н.',
-          date: '2025-03-01T11:40:00',
-          content: 'Проверьте настройки мониторинга и статистики. Возможно, сбросились настройки сбора данных после обновления.',
-          likes: 3
-        },
-        {
-          id: 202,
-          author: 'Михаил Г.',
-          date: '2025-03-01T14:22:00',
-          content: 'В новых версиях ACI изменились некоторые метрики. Попробуйте перенастроить политики сбора данных.',
-          likes: 1
-        }
-      ]
-    },
-    {
-      id: 3,
-      categoryId: 'security',
-      title: 'Firepower 4110 не открывается веб-интерфейс управления',
-      author: 'Владимир Д.',
-      date: '2025-03-10T09:27:00',
-      views: 432,
-      replies: 15,
-      content: `После перезагрузки Firepower 4110 не могу получить доступ к веб-интерфейсу управления. SSH работает нормально, но при попытке подключения по HTTPS браузер выдает ошибку подключения. Что может быть причиной и как это исправить?`,
-      tags: ['firepower', '4110', 'веб-интерфейс', 'HTTPS'],
-      solved: true,
-      likes: 12,
-      comments: [
-        {
-          id: 301,
-          author: 'Елена В.',
-          date: '2025-03-10T10:05:00',
-          content: 'Проверьте настройки TLS и сертификатов. Возможно, истек срок действия сертификата после перезагрузки.',
-          likes: 8
-        },
-        {
-          id: 302,
-          author: 'Андрей П.',
-          date: '2025-03-10T11:30:00',
-          content: 'Попробуйте сбросить настройки управления через SSH командой: "configure manager local"',
-          likes: 6
-        },
-        {
-          id: 303,
-          author: 'Максим К.',
-          date: '2025-03-10T14:15:00',
-          content: 'Проверьте, что служба HTTPS запущена и указаны правильные порты. Иногда после обновлений сбрасываются настройки доступа.',
-          likes: 10
-        }
-      ]
-    },
-    {
-      id: 4,
-      categoryId: 'wireless',
-      title: 'Cisco AIR-AP1852i не подключается к контроллеру WLC',
-      author: 'Наталья Р.',
-      date: '2025-02-28T16:40:00',
-      views: 187,
-      replies: 8,
-      content: `Установили новые точки доступа Cisco AIR-AP1852i, но они не подключаются к контроллеру WLC. В логах видно, что точки получают IP-адреса, но не проходят авторизацию. Контроллер - Cisco 5508. Есть идеи, как решить проблему?`,
-      tags: ['беспроводные сети', 'AP1852i', 'WLC', 'авторизация'],
-      solved: false,
-      likes: 4,
-      comments: [
-        {
-          id: 401,
-          author: 'Сергей К.',
-          date: '2025-02-28T17:15:00',
-          content: 'Проверьте версии прошивок. Точки 1852i требуют определенной минимальной версии на контроллере 5508.',
-          likes: 2
-        },
-        {
-          id: 402,
-          author: 'Александр М.',
-          date: '2025-02-28T18:30:00',
-          content: 'Проблема может быть в настройках безопасности. Проверьте настройки авторизации AP на контроллере и наличие сертификатов.',
-          likes: 3
-        }
-      ]
-    },
-    {
-      id: 5,
-      categoryId: 'ucs',
-      title: 'Проблема с загрузкой голосовой почты CUE на UC520',
-      author: 'Денис Л.',
-      date: '2025-03-05T11:20:00',
-      views: 156,
-      replies: 6,
-      content: `После сбоя питания система голосовой почты CUE на маршрутизаторе UC520 не загружается. Система выдает ошибку при инициализации модуля. Пытался сбросить настройки, но это не помогло. Как можно восстановить работу голосовой почты?`,
-      tags: ['UC520', 'CUE', 'голосовая почта', 'сбой'],
-      solved: true,
-      likes: 7,
-      comments: [
-        {
-          id: 501,
-          author: 'Олег В.',
-          date: '2025-03-05T12:45:00',
-          content: 'Возможно, повреждена файловая система. Попробуйте выполнить команду "show tech-support"',
-          likes: 1
-        },
-        {
-          id: 502,
-          author: 'Евгений С.',
-          date: '2025-03-05T14:30:00',
-          content: 'В таких случаях часто помогает переинициализация модуля CUE. Используйте команду "service-module service-engine 1/0 reload"',
-          likes: 5
-        },
-        {
-          id: 503,
-          author: 'Алексей М.',
-          date: '2025-03-06T09:15:00',
-          content: 'Если не помогает переинициализация, то возможно повреждение образа. Попробуйте восстановить через TFTP.',
-          likes: 6
-        },
-// Add these to the 'threads' array in your existing data
-
-// Additional threads for networking category
-{
-  id: 6,
-  categoryId: 'networking',
-  title: 'Ошибка Stack Master на Cisco 3850',
-  author: 'Игорь М.',
-  date: '2025-02-10T08:45:00',
-  views: 245,
-  replies: 5,
-  content: `После обновления стека коммутаторов Cisco 3850 до IOS 16.9.4, один из коммутаторов перестал быть мастером стека и выдает ошибку "Stack Port 1 invalid neighbor". Кто-нибудь сталкивался с такой проблемой?`,
-  tags: ['3850', 'стек', 'IOS 16.9.4', 'stack master'],
-  solved: true,
-  likes: 9,
-  comments: [
-    {
-      id: 601,
-      author: 'Андрей К.',
-      date: '2025-02-10T09:30:00',
-      content: 'Проверьте физическое соединение стековых кабелей. Возможно, после обновления сбросились настройки стековых портов.',
-      likes: 3
-    },
-    {
-      id: 602,
-      author: 'Петр С.',
-      date: '2025-02-10T10:15:00',
-      content: 'Эта ошибка обычно указывает на проблему с кабелем или портом. Попробуйте заменить стековый кабель.',
-      likes: 7
-    },
-    {
-      id: 603,
-      author: 'Мария В.',
-      date: '2025-02-10T12:40:00',
-      content: 'У нас была похожая проблема после обновления. Помогла полная перезагрузка всего стека с отключением питания. После этого переизбрался мастер и всё заработало.',
-      likes: 5
-    }
-,
-{
-  id: 7,
-  categoryId: 'networking',
-  title: 'Ошибка MTU при настройке OSPF на ISR 4431',
-  author: 'Алексей Ф.',
-  date: '2025-02-18T15:22:00',
-  views: 189,
-  replies: 4,
-  content: `При настройке OSPF на маршрутизаторе ISR 4431 возникает ошибка MTU mismatch с соседними устройствами. Адъясенси формируется, но потом разрывается. В логах видно сообщение "OSPF-5-ADJCHG: Process 1, Nbr 10.1.1.2 on GigabitEthernet0/0/1 from FULL to DOWN, Reason: MTU mismatch". Как можно решить эту проблему?`,
-  tags: ['ISR 4431', 'OSPF', 'MTU', 'adjacency'],
-  solved: true,
-  likes: 6,
-  comments: [
-    {
-      id: 701,
-      author: 'Сергей Н.',
-      date: '2025-02-18T15:50:00',
-      content: 'Проверьте значения MTU на обоих интерфейсах. Они должны совпадать. Используйте команду "show interface GigabitEthernet0/0/1" и сравните с соседним устройством.',
-      likes: 4
-    },
-,
-{
-  id: 7,
-  categoryId: 'networking',
-  title: 'Ошибка MTU при настройке OSPF на ISR 4431',
-  author: 'Алексей Ф.',
-  date: '2025-02-18T15:22:00',
-  views: 189,
-  replies: 4,
-  content: `При настройке OSPF на маршрутизаторе ISR 4431 возникает ошибка MTU mismatch с соседними устройствами. Адъясенси формируется, но потом разрывается. В логах видно сообщение "OSPF-5-ADJCHG: Process 1, Nbr 10.1.1.2 on GigabitEthernet0/0/1 from FULL to DOWN, Reason: MTU mismatch". Как можно решить эту проблему?`,
-  tags: ['ISR 4431', 'OSPF', 'MTU', 'adjacency'],
-  solved: true,
-  likes: 6,
 // src/pages/Community.jsx
 import { useState, useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
@@ -485,7 +206,8 @@ const INITIAL_FORUM_DATA = {
           date: '2025-03-06T09:15:00',
           content: 'Если не помогает переинициализация, то возможно повреждение образа. Попробуйте восстановить через TFTP.',
           likes: 6
-        },
+        }
+        // Additional forum threads data to add to your INITIAL_FORUM_DATA object in Community.jsx
 // Add these to the 'threads' array in your existing data
 
 // Additional threads for networking category
@@ -523,7 +245,8 @@ const INITIAL_FORUM_DATA = {
       content: 'У нас была похожая проблема после обновления. Помогла полная перезагрузка всего стека с отключением питания. После этого переизбрался мастер и всё заработало.',
       likes: 5
     }
-,
+  ]
+},
 {
   id: 7,
   categoryId: 'networking',
@@ -542,29 +265,6 @@ const INITIAL_FORUM_DATA = {
       author: 'Сергей Н.',
       date: '2025-02-18T15:50:00',
       content: 'Проверьте значения MTU на обоих интерфейсах. Они должны совпадать. Используйте команду "show interface GigabitEthernet0/0/1" и сравните с соседним устройством.',
-      likes: 4
-    },
-,
-{
-  id: 7,
-  categoryId: 'networking',
-  title: 'Ошибка MTU при настройке OSPF на ISR 4431',
-  author: 'Алексей Ф.',
-  date: '2025-02-18T15:22:00',
-  views: 189,
-  replies: 4,
-  content: `При настройке OSPF на маршрутизаторе ISR 4431 возникает ошибка MTU mismatch с соседними устройствами. Адъясенси формируется, но потом разрывается. В логах видно сообщение "OSPF-5-ADJCHG: Process 1, Nbr 10.1.1.2 on GigabitEthernet0/0/1 from FULL to DOWN, Reason: MTU mismatch". Как можно решить эту проблему?`,
-  tags: ['ISR 4431', 'OSPF', 'MTU', 'adjacency'],
-  solved: true,
-  likes: 6,
-  comments: [
-    {
-      id: 701,
-      author: 'Сергей Н.',
-      date: '2025-02-18T15:50:00',
-      content: 'Проверьте значения MTU на обоих интерфейсах. Они должны совпадать. Используйте команду "show interface GigabitEthernet0/0/1" и сравните с соседним устройством.',
-      likes: 4
-    },
       likes: 4
     },
     {
@@ -1475,6 +1175,20 @@ const INITIAL_FORUM_DATA = {
       date: '2025-03-14T16:30:00',
       content: 'Ошибка "VNI_VRF_MAPPING_FAIL" обычно возникает, когда VNI не привязан к правильному VRF. Проверьте, что команда "vni <id>" присутствует в нужном VRF.',
       likes: 18
+    },
+    {
+      id: 3202,
+      author: 'Елена К.',
+      date: '2025-03-14T17:50:00',
+      content: 'Проверьте также конфигурацию BGP EVPN. На Catalyst 9500 требуется явное включение специальной address-family: "address-family l2vpn evpn"
+  ]
+}
+    {
+      id: 3202,
+      author: 'Елена К.',
+      date: '2025-03-14T17:50:00',
+      content: 'Проверьте также конфигурацию BGP EVPN. На Catalyst 9500 требуется явное включение специальной address-family: "address-family l2vpn evpn" и настройка route-target import/export.',
+      likes: 15
     },
     {
       id: 3203,
@@ -2421,7 +2135,10 @@ const INITIAL_FORUM_DATA = {
     }
   ]
 },
-
+{
+        
+  ]
+};
 
 export default function Community() {
   const [viewMode, setViewMode] = useState('categories'); // categories, threads, thread
@@ -2441,17 +2158,20 @@ export default function Community() {
     } catch (error) {
       return dateString;
     }
+  };
 
   // Handle category selection
   const handleCategoryClick = (categoryId) => {
     setActiveCategory(categoryId);
     setViewMode('threads');
+  };
 
   // Handle thread selection
   const handleThreadClick = (threadId) => {
     const thread = forumData.threads.find(t => t.id === threadId);
     setActiveThread(thread);
     setViewMode('thread');
+  };
 
   // Handle back button
   const handleBack = () => {
@@ -2462,12 +2182,14 @@ export default function Community() {
       setViewMode('categories');
       setActiveCategory(null);
     }
+  };
 
   // Handle search
   const handleSearch = (e) => {
     e.preventDefault();
     // Implement search functionality here
     console.log('Searching for:', searchQuery);
+  };
 
   // Handle like/dislike thread
   const handleLikeThread = (threadId) => {
@@ -2480,6 +2202,7 @@ export default function Community() {
       });
       return { ...prevData, threads: updatedThreads };
     });
+  };
 
   // Handle like/dislike comment
   const handleLikeComment = (threadId, commentId) => {
@@ -2498,6 +2221,7 @@ export default function Community() {
       });
       return { ...prevData, threads: updatedThreads };
     });
+  };
 
   // Handle new comment submission
   const handleCommentSubmit = (e) => {
@@ -2510,6 +2234,7 @@ export default function Community() {
       date: new Date().toISOString(),
       content: newComment,
       likes: 0
+    };
 
     setForumData(prevData => {
       const updatedThreads = prevData.threads.map(thread => {
@@ -2518,6 +2243,7 @@ export default function Community() {
             ...thread,
             comments: [...thread.comments, newCommentObj],
             replies: thread.replies + 1
+          };
         }
         return thread;
       });
@@ -2531,11 +2257,13 @@ export default function Community() {
     }));
     
     setNewComment('');
+  };
 
   // Handle new thread form change
   const handleNewThreadChange = (e) => {
     const { name, value } = e.target;
     setNewThread(prev => ({ ...prev, [name]: value }));
+  };
 
   // Handle new thread submission
   const handleNewThreadSubmit = (e) => {
@@ -2557,6 +2285,7 @@ export default function Community() {
       solved: false,
       likes: 0,
       comments: []
+    };
 
     setForumData(prevData => ({
       ...prevData,
@@ -2570,6 +2299,7 @@ export default function Community() {
     // Navigate to the new thread
     setActiveThread(newThreadObj);
     setViewMode('thread');
+  };
 
   // Get filtered threads based on active category
   const filteredThreads = activeCategory
@@ -2949,6 +2679,4 @@ export default function Community() {
 }
 
   ]
-
-// src/pages/Community.jsx
 };
