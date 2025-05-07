@@ -244,6 +244,27 @@ const INITIAL_FORUM_DATA = {
       content: 'У нас была похожая проблема после обновления. Помогла полная перезагрузка всего стека с отключением питания. После этого переизбрался мастер и всё заработало.',
       likes: 5
     }
+,
+{
+  id: 7,
+  categoryId: 'networking',
+  title: 'Ошибка MTU при настройке OSPF на ISR 4431',
+  author: 'Алексей Ф.',
+  date: '2025-02-18T15:22:00',
+  views: 189,
+  replies: 4,
+  content: `При настройке OSPF на маршрутизаторе ISR 4431 возникает ошибка MTU mismatch с соседними устройствами. Адъясенси формируется, но потом разрывается. В логах видно сообщение "OSPF-5-ADJCHG: Process 1, Nbr 10.1.1.2 on GigabitEthernet0/0/1 from FULL to DOWN, Reason: MTU mismatch". Как можно решить эту проблему?`,
+  tags: ['ISR 4431', 'OSPF', 'MTU', 'adjacency'],
+  solved: true,
+  likes: 6,
+  comments: [
+    {
+      id: 701,
+      author: 'Сергей Н.',
+      date: '2025-02-18T15:50:00',
+      content: 'Проверьте значения MTU на обоих интерфейсах. Они должны совпадать. Используйте команду "show interface GigabitEthernet0/0/1" и сравните с соседним устройством.',
+      likes: 4
+    },
   ]
 };
 {
