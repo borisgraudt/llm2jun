@@ -212,7 +212,7 @@ const INITIAL_FORUM_DATA = {
 // Add these to the 'threads' array in your existing data
 
 // Additional threads for networking category
-        ]
+    }
 {
   id: 6,
   categoryId: 'networking',
