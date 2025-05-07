@@ -245,7 +245,7 @@ const INITIAL_FORUM_DATA = {
       likes: 5
     }
   ]
-},
+};
 {
   id: 7,
   categoryId: 'networking',
