@@ -1,9 +1,10 @@
 // src/pages/Home.jsx
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Community from './Community'; // Import the Community component
-import { itsmApi } from '../services/itsmApi';
+import Community from './Community';
+import { telegramApi } from '../services/telegramApi';
 import { v4 as uuidv4 } from 'uuid';
+import { websocketService } from '../services/websocketService';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -13,15 +14,14 @@ export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   
-  // Chat history management with ITSM integration
+  // Chat history management
   const [chats, setChats] = useState([
     {
       id: uuidv4(),
-      title: 'Проблема на WS-C9300-24P-A',
+      title: 'Новый чат',
       messages: [],
-      itsmIncidentId: null,
-      itsmStatus: null,
       expertAssigned: false,
+      expertName: null,
     }
   ]);
   
@@ -34,14 +34,6 @@ export default function Home() {
       navigate('/');
     }
   }, [navigate]);
-
-  // Animation effect when component mounts
-  useEffect(() => {
-    const homeContainer = document.querySelector('.home-container');
-    if (homeContainer) {
-      homeContainer.classList.add('fade-in');
-    }
-  }, []);
 
   // Scroll to bottom when messages update
   useEffect(() => {
@@ -58,16 +50,15 @@ export default function Home() {
   // Get current chat
   const currentChat = chats.find(chat => chat.id === activeChat) || chats[0];
 
-  // Create new chat with unique ID
+  // Create new chat
   const createNewChat = () => {
     const newChatId = uuidv4();
     const newChat = {
       id: newChatId,
       title: 'Новый запрос',
       messages: [],
-      itsmIncidentId: null,
-      itsmStatus: null,
       expertAssigned: false,
+      expertName: null,
     };
     
     setChats([newChat, ...chats]);
@@ -84,122 +75,135 @@ export default function Home() {
     const chat = chats.find(c => c.id === chatId);
     if (!chat) return;
 
+    // If expert mode is already assigned, do nothing or potentially handle deactivation later
+    if (chat.expertAssigned) {
+      console.log(`Expert already assigned to chat ${chatId}`);
+      return;
+    }
+
     try {
-      if (!chat.itsmIncidentId && expertMode) {
-        // Create new ITSM incident when switching to expert mode
-        const incidentData = {
-          title: chat.title,
-          description: chat.messages.map(m => `${m.role}: ${m.content}`).join('\n'),
-          userId: 'default-user', // Replace with actual user ID when authentication is implemented
-        };
+      // Find the last user message to send as the initial message to the expert
+      const lastUserMessage = chat.messages.filter(msg => msg.role === 'user').pop();
 
-        const incident = await itsmApi.createIncident(incidentData);
-        
-        setChats(chats.map(c => {
-          if (c.id === chatId) {
-            return {
-              ...c,
-              itsmIncidentId: incident.incidentId,
-              itsmStatus: incident.status,
-              expertAssigned: true,
-            };
-          }
-          return c;
-        }));
+      // Send chat history to expert via Telegram
+      await telegramApi.sendMessageToExpert(chatId, lastUserMessage?.content || '', chat.messages);
 
-        // Add system message about expert assignment
-        const updatedChats = chats.map(c => {
-          if (c.id === chatId) {
-            return {
-              ...c,
-              messages: [...c.messages, {
-                role: 'system',
-                content: `Ваш запрос был направлен эксперту. Номер инцидента: ${incident.incidentId}`,
-              }],
-            };
-          }
-          return c;
-        });
-        setChats(updatedChats);
-      }
+      // Update chat state: set expertAssigned to true and add system message
+      setChats(prevChats => prevChats.map(c => {
+        if (c.id === chatId) {
+          return {
+            ...c,
+            expertAssigned: true,
+            messages: [...c.messages, {
+              role: 'system',
+              content: 'Ваш запрос был направлен эксперту. Ожидайте ответа.',
+              timestamp: new Date().toISOString(),
+            }],
+          };
+        }
+        return c;
+      }));
+
     } catch (error) {
-      console.error('Error creating ITSM incident:', error);
+      console.error('Error sending chat to expert:', error);
       // Add error message to chat
-      const updatedChats = chats.map(c => {
+      setChats(prevChats => prevChats.map(c => {
         if (c.id === chatId) {
           return {
             ...c,
             messages: [...c.messages, {
               role: 'system',
-              content: 'Произошла ошибка при создании запроса эксперту. Пожалуйста, попробуйте позже.',
+              content: 'Произошла ошибка при отправке запроса эксперту. Пожалуйста, попробуйте позже.',
+              timestamp: new Date().toISOString(),
             }],
           };
         }
         return c;
-      });
-      setChats(updatedChats);
+      }));
     }
   };
 
-  // Update sendMessage to handle expert mode
+  // Send message
   const sendMessage = async () => {
     if (!message.trim()) return;
 
     const currentChat = chats.find(chat => chat.id === activeChat);
     if (!currentChat) return;
 
-    // Add user message to current chat
-    const updatedChats = chats.map(chat => {
+    // Optimistically add user message to current chat
+    const newUserMessage = {
+      id: uuidv4(), // Add a unique ID for the message
+      role: 'user',
+      content: message,
+      timestamp: new Date().toISOString(),
+      sender: 'Вы'
+    };
+
+    setChats(prevChats => prevChats.map(chat => {
       if (chat.id === activeChat) {
         return {
           ...chat,
-          messages: [...chat.messages, { role: 'user', content: message }],
-          title: chat.messages.length === 0 ? (message.length > 25 ? message.substring(0, 25) + '...' : message) : chat.title,
+          messages: [...chat.messages, newUserMessage],
+          title: chat.messages.length === 0 && message.length > 0 ? (message.length > 25 ? message.substring(0, 25) + '...' : message) : chat.title,
         };
       }
       return chat;
-    });
-    setChats(updatedChats);
+    }));
+
     setMessage('');
 
-    if (expertMode && currentChat.itsmIncidentId) {
+    if (expertMode && currentChat.expertAssigned) {
+      console.log('Expert mode is active and expert is assigned.');
+      console.log('Calling telegramApi.sendNewMessageToExpert with chatId:', currentChat.id, 'and message:', newUserMessage.content);
       try {
-        // Update ITSM incident with new message
-        await itsmApi.updateIncident(currentChat.itsmIncidentId, {
-          work_notes: message,
-        });
+        // Send message to expert via Telegram
+        await telegramApi.sendNewMessageToExpert(currentChat.id, newUserMessage.content);
 
-        // Add system message about expert notification
-        const chatsWithResponse = chats.map(chat => {
+        // Add system message about expert notification (optional, can be removed if not needed after successful send)
+        // Keeping it for now for user feedback
+        setChats(prevChats => prevChats.map(chat => {
           if (chat.id === activeChat) {
             return {
               ...chat,
               messages: [
-                ...chat.messages,
-                { role: 'user', content: message },
-                { role: 'system', content: 'Сообщение отправлено эксперту. Ожидайте ответа.' },
+                ...chat.messages.filter(msg => msg.id !== newUserMessage.id), // Remove the optimistically added message
+                newUserMessage, // Add it back to ensure order
+                { 
+                  role: 'system', 
+                  content: 'Сообщение отправлено эксперту. Ожидайте ответа.',
+                  timestamp: new Date().toISOString()
+                },
               ],
             };
           }
           return chat;
-        });
-        setChats(chatsWithResponse);
+        }));
+
       } catch (error) {
-        console.error('Error updating ITSM incident:', error);
-        // Handle error
+        console.error('Error sending message to expert:', error);
+        // Handle error: maybe show an error message to the user
       }
     } else {
       // Regular AI response for non-expert mode
       setTimeout(() => {
         const responseText = expertMode
-          ? 'Ваш запрос был направлен специалисту по сетевому оборудованию. Ожидайте ответа в течение 15 минут.'
-          : 'Это симуляция ответа от системы. Для получения реальной технической поддержки требуется интеграция с базой знаний.';
+          ? 'Ваш запрос был направлен специалисту. Ожидайте ответа.' // This text might need adjustment as it's now handled by expert response via WS
+          : 'Это симуляция ответа от системы.';
         
         const chatsWithResponse = chats.map(chat => {
           if (chat.id === activeChat) {
             return {
               ...chat,
-              messages: [...chat.messages, { role: 'user', content: message }, { role: 'assistant', content: responseText }],
+              messages: [
+                ...chat.messages, 
+                // The user message was already added optimistically, no need to add again
+                { 
+                  role: 'assistant', 
+                  content: responseText,
+                  timestamp: new Date().toISOString(),
+                  sender: expertMode ? 'Эксперт' : 'Ассистент'
+                }
+              ],
             };
           }
           return chat;
@@ -209,38 +213,39 @@ export default function Home() {
     }
   };
 
-  // Add effect to periodically check ITSM incident status
   useEffect(() => {
-    const currentChat = chats.find(chat => chat.id === activeChat);
-    if (!currentChat || !currentChat.itsmIncidentId) return;
-
-    const checkIncidentStatus = async () => {
-      try {
-        const status = await itsmApi.getIncidentStatus(currentChat.itsmIncidentId);
-        
-        if (status.status !== currentChat.itsmStatus) {
-          setChats(chats.map(chat => {
-            if (chat.id === activeChat) {
-              return {
-                ...chat,
-                itsmStatus: status.status,
-                messages: [...chat.messages, {
-                  role: 'system',
-                  content: `Статус инцидента обновлен: ${status.status}${status.assignedTo ? `. Назначен: ${status.assignedTo}` : ''}`,
-                }],
+    // Connect to WebSocket when expert mode is activated
+    if (currentChat?.expertAssigned) {
+      websocketService.connect(currentChat.id);
+      
+      // Add message handler
+      const handleExpertMessage = (message) => {
+        if (message.role === 'expert') {
+          setChats(prevChats => {
+            const updatedChats = [...prevChats];
+            const chatIndex = updatedChats.findIndex(c => c.id === currentChat.id);
+            
+            if (chatIndex !== -1) {
+              updatedChats[chatIndex] = {
+                ...updatedChats[chatIndex],
+                messages: [...updatedChats[chatIndex].messages, message]
               };
             }
-            return chat;
-          }));
+            
+            return updatedChats;
+          });
         }
-      } catch (error) {
-        console.error('Error checking incident status:', error);
-      }
-    };
-
-    const intervalId = setInterval(checkIncidentStatus, 30000); // Check every 30 seconds
-    return () => clearInterval(intervalId);
-  }, [activeChat, chats]);
+      };
+      
+      websocketService.addMessageHandler(handleExpertMessage);
+      
+      // Cleanup
+      return () => {
+        websocketService.removeMessageHandler(handleExpertMessage);
+        websocketService.disconnect();
+      };
+    }
+  }, [currentChat?.expertAssigned, currentChat?.id]);
 
   return (
     <div className="home-container opacity-0 transition-opacity duration-1000 flex h-screen overflow-hidden bg-white text-gray-800">
@@ -249,274 +254,122 @@ export default function Home() {
         <div 
           className="md:hidden fixed inset-0 z-10 bg-black bg-opacity-50"
           onClick={() => setShowMobileSidebar(false)}
-        ></div>
+        />
       )}
-      
+
       {/* Sidebar */}
-      <div className={`
-        ${sidebarOpen ? 'w-64' : 'w-0'} 
-        ${showMobileSidebar ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} 
-        fixed md:relative z-20 h-full transition-all duration-300 ease-in-out
-        bg-gray-100 border-r border-gray-200 flex flex-col overflow-hidden
-      `}>
-        <div className="p-4 border-b border-gray-200 flex items-center shrink-0">
-          <div className="w-8 h-8 mr-2">
-            <img 
-              src="/images/logo.png" 
-              alt="Logo" 
-              className="w-full h-full object-contain" 
-            />
-          </div>
-          <h1 className="text-xl font-semibold">Техподдержка</h1>
-        </div>
-        
-        <div className="p-3 shrink-0">
-          <button 
+      <div className={`${sidebarOpen ? 'w-64' : 'w-0'} md:w-64 transition-all duration-300 ease-in-out bg-gray-100 h-full flex flex-col`}>
+        {/* Sidebar content */}
+        <div className="p-4">
+          <button
             onClick={createNewChat}
-            className="w-full flex items-center justify-center py-2 px-3 border border-gray-300 rounded-md hover:bg-gray-200 transition-colors"
+            className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition-colors"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
             Новый чат
           </button>
         </div>
-        
-        <div className="flex-1 overflow-y-auto sidebar-chats">
+
+        {/* Chat list */}
+        <div className="flex-1 overflow-y-auto">
           {chats.map(chat => (
-            <div 
+            <div
               key={chat.id}
-              onClick={() => {
-                setActiveChat(chat.id);
-                if (window.innerWidth < 768) {
-                  setShowMobileSidebar(false);
-                }
-              }}
-              className={`p-3 cursor-pointer hover:bg-gray-200 transition-colors border-b border-gray-200 chat-item ${
-                activeChat === chat.id ? 'active' : ''
+              className={`p-4 cursor-pointer hover:bg-gray-200 transition-colors ${
+                activeChat === chat.id ? 'bg-gray-200' : ''
               }`}
+              onClick={() => setActiveChat(chat.id)}
             >
-              <div className="flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                </svg>
-                <span className="text-sm truncate">{chat.title}</span>
+              <div className="font-medium truncate">{chat.title}</div>
+              <div className="text-sm text-gray-500 truncate">
+                {chat.messages[chat.messages.length - 1]?.content || 'Нет сообщений'}
               </div>
             </div>
           ))}
         </div>
-      </div>
-      
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden main-content-area">
-        {/* Header */}
-        <header className="bg-gray-100 border-b border-gray-200 p-3 flex justify-between items-center shrink-0">
-          <div className="flex items-center">
-            {/* Mobile menu button */}
-            <button
-              className="md:hidden mr-2 text-gray-600"
-              onClick={() => setShowMobileSidebar(!showMobileSidebar)}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-            
-            {/* Desktop sidebar toggle */}
-            <button
-              className="hidden md:block mr-2 text-gray-600"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-            
-            {/* Tabs */}
-            <div className="flex">
-              <button 
-                onClick={() => setActiveTab('chat')} 
-                className={`px-4 py-2 font-medium transition-colors duration-200 ${
-                  activeTab === 'chat' 
-                    ? 'text-gray-600 border-b-2 border-gray-400' 
-                    : 'text-gray-500 hover:text-gray-600'
-                }`}
-              >
-                Чат
-              </button>
-              <button 
-                onClick={() => setActiveTab('community')} 
-                className={`px-4 py-2 font-medium transition-colors duration-200 ${
-                  activeTab === 'community' 
-                    ? 'text-gray-600 border-b-2 border-gray-400' 
-                    : 'text-gray-500 hover:text-gray-600'
-                }`}
-              >
-                Сообщество
-              </button>
-            </div>
-          </div>
-          
-          <button 
-            onClick={logout} 
-            className="text-gray-600 hover:text-gray-800 px-4 py-2 rounded-md"
+
+        {/* Logout button */}
+        <div className="p-4">
+          <button
+            onClick={logout}
+            className="w-full bg-red-500 text-white p-2 rounded hover:bg-red-600 transition-colors"
           >
             Выйти
           </button>
-        </header>
+        </div>
+      </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-hidden">
-          {activeTab === 'chat' ? (
-            <div className="flex flex-col h-full">
-              <div className="flex-1 flex flex-col items-center overflow-hidden">
-                <div className="flex flex-col w-full max-w-3xl h-full">
-                  {currentChat.messages.length === 0 ? (
-                    <div className="flex-1 flex items-center justify-center text-center px-4 py-4 md:py-8 overflow-auto empty-state-container">
-                      <div className="max-w-2xl w-full">
-                        <h2 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8 text-gray-800">Опишите свою проблему</h2>
-                        <div className="flex rounded-lg border border-gray-300 overflow-hidden">
-                          <input
-                            type="text"
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                            placeholder="Проблема с потерей пакетов на Cisco WS-C9300-24P-A"
-                            className="flex-1 px-4 py-3 focus:outline-none text-gray-800"
-                          />
-                          <button
-                            onClick={sendMessage}
-                            disabled={!message.trim()}
-                            className={`px-4 bg-gray-200 text-black transition-colors ${
-                              message.trim() ? 'hover:bg-gray-300' : 'opacity-50 cursor-not-allowed'
-                            }`}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                              <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-                            </svg>
-                          </button>
-                        </div>
-                      
-                        {/* AI/Expert Toggle */}
-                        <div className="flex justify-center mt-6">
-                          <div className="flex items-center px-4 py-2 space-x-3 border border-gray-300 rounded-md">
-                            <span className={`text-sm ${!expertMode ? 'font-medium' : ''} text-gray-600`}>AI</span>
-                            <label className="relative inline-flex items-center cursor-pointer">
-                              <input 
-                                type="checkbox" 
-                                className="sr-only peer" 
-                                checked={expertMode}
-                                onChange={() => {
-                                  setExpertMode(!expertMode);
-                                  handleExpertModeToggle(activeChat);
-                                }}
-                              />
-                              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-600"></div>
-                            </label>
-                            <span className={`text-sm ${expertMode ? 'font-medium' : ''} text-gray-600`}>Эксперт</span>
-                          </div>
-                        </div>
-                        
-                        <div className="flex justify-center mt-4 space-x-2">
-                          <button className="text-gray-500 text-sm border border-gray-300 rounded-md px-3 py-2 hover:bg-gray-50">
-                            <span className="flex items-center">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                              </svg>
-                              Поиск
-                            </span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      {/* Messages List - Responsive height with scrolling */}
-                      <div className="flex-1 overflow-y-auto p-4 space-y-4 mb-2 chat-messages-container">
-                        {currentChat.messages.map((msg, index) => (
-                          <div 
-                            key={index}
-                            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                          >
-                            <div 
-                              className={`max-w-xs sm:max-w-md p-3 rounded-lg chat-message ${
-                                msg.role === 'user' 
-                                  ? 'bg-gray-300 text-gray-800 rounded-br-none' 
-                                  : 'bg-gray-100 text-gray-800 rounded-bl-none'
-                              }`}
-                            >
-                              {msg.content}
-                            </div>
-                          </div>
-                        ))}
-                        <div ref={messagesEndRef} />
-                      </div>
+      {/* Main content */}
+      <div className="flex-1 flex flex-col h-full">
+        {/* Chat header */}
+        <div className="p-4 border-b flex justify-between items-center">
+          <div className="flex items-center">
+            <button
+              className="md:hidden mr-2"
+              onClick={() => setShowMobileSidebar(true)}
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <h2 className="text-xl font-semibold">{currentChat.title}</h2>
+          </div>
+          <div className="flex items-center space-x-4">
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={expertMode}
+                onChange={() => handleExpertModeToggle(activeChat)}
+                className="form-checkbox h-5 w-5 text-blue-500"
+              />
+              <span>Экспертный режим</span>
+            </label>
+          </div>
+        </div>
 
-                      {/* Message Input and AI/Expert toggle */}
-                      <div className="w-full px-4 chat-input-wrapper">
-                        {/* AI/Expert Toggle */}
-                        <div className="flex justify-between items-center mb-3">
-                          <div className="flex items-center space-x-3">
-                            <span className={`text-sm ${!expertMode ? 'font-medium' : ''} text-gray-600`}>AI</span>
-                            <label className="relative inline-flex items-center cursor-pointer">
-                              <input 
-                                type="checkbox" 
-                                className="sr-only peer" 
-                                checked={expertMode}
-                                onChange={() => {
-                                  setExpertMode(!expertMode);
-                                  handleExpertModeToggle(activeChat);
-                                }}
-                              />
-                              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-600"></div>
-                            </label>
-                            <span className={`text-sm ${expertMode ? 'font-medium' : ''} text-gray-600`}>Эксперт</span>
-                          </div>
-                          
-                          <button className="text-gray-500 text-sm border border-gray-300 rounded-md px-3 py-2 hover:bg-gray-50">
-                            <span className="flex items-center">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                              </svg>
-                              Поиск
-                            </span>
-                          </button>
-                        </div>
-                        
-                        {/* Message input */}
-                        <div className="flex rounded-lg border border-gray-300 overflow-hidden mb-4">
-                          <input
-                            type="text"
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                            placeholder="Введите сообщение..."
-                            className="flex-1 px-4 py-3 focus:outline-none text-gray-800"
-                          />
-                          <button
-                            onClick={sendMessage}
-                            disabled={!message.trim()}
-                            className={`px-4 bg-gray-200 text-black transition-colors ${
-                              message.trim() ? 'hover:bg-gray-300' : 'opacity-50 cursor-not-allowed'
-                            }`}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                              <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </>
-                  )}
+        {/* Chat messages */}
+        <div className="flex-1 overflow-y-auto p-4">
+          {currentChat.messages.map((msg, index) => (
+            <div key={index} className={`mb-4 ${msg.role === 'user' ? 'text-right' : ''}`}>
+              {msg.role !== 'system' && (
+                <div className="text-sm text-gray-500 mb-1">
+                  {msg.sender || (msg.role === 'user' ? 'Вы' : 'Ассистент')}
                 </div>
+              )}
+              <div className={`inline-block p-3 rounded-lg ${
+                msg.role === 'user' 
+                  ? 'bg-blue-500 text-white' 
+                  : msg.role === 'system'
+                    ? 'bg-gray-200 text-gray-700'
+                    : 'bg-gray-100 text-gray-800'
+              }`}>
+                {msg.content}
+              </div>
+              <div className="text-xs text-gray-400 mt-1">
+                {new Date(msg.timestamp).toLocaleTimeString()}
               </div>
             </div>
-          ) : (
-            // Community Tab Content
-            <div className="overflow-auto h-full">
-              <Community />
-            </div>
-          )}
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Message input */}
+        <div className="p-4 border-t">
+          <div className="flex space-x-4">
+            <input
+              type="text"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+              placeholder="Введите сообщение..."
+              className="flex-1 p-2 border rounded focus:outline-none focus:border-blue-500"
+            />
+            <button
+              onClick={sendMessage}
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
+            >
+              Отправить
+            </button>
+          </div>
         </div>
       </div>
     </div>
