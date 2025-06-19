@@ -12,6 +12,13 @@ export default function Home() {
   const [message, setMessage] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const [showExpertDisclaimer, setShowExpertDisclaimer] = useState(false);
+  const [expertDisclaimerShown, setExpertDisclaimerShown] = useState(false);
+  const [showDisclaimerInChat, setShowDisclaimerInChat] = useState(false);
+  const [disclaimerMessageId, setDisclaimerMessageId] = useState(null);
+  const [disclaimerButtonsVisible, setDisclaimerButtonsVisible] = useState(true);
+  const [waitingForUserQuestion, setWaitingForUserQuestion] = useState(false);
+  const [chatMenuOpen, setChatMenuOpen] = useState(null); // id чата, для которого открыто меню
   
   // Chat history management with ITSM integration
   const [chats, setChats] = useState([
@@ -49,6 +56,35 @@ export default function Home() {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [chats, activeChat]);
+
+  // Use effect for expert mode
+  useEffect(() => {
+    if (expertMode && !expertDisclaimerShown && !showDisclaimerInChat) {
+      // Добавляем дисклеймер в чат
+      const id = Date.now();
+      setChats(chats => chats.map(chat => {
+        if (chat.id === activeChat) {
+          return {
+            ...chat,
+            messages: [
+              ...chat.messages,
+              {
+                role: 'disclaimer',
+                id,
+                content: 'Все вопросы будут отправлены инженеру. Инженеру потребуется время на ознакомление. Инженер направит ответ в течение 15 минут.',
+                date: new Date(),
+              },
+            ],
+          };
+        }
+        return chat;
+      }));
+      setDisclaimerMessageId(id);
+      setShowDisclaimerInChat(true);
+      setExpertDisclaimerShown(true);
+      setDisclaimerButtonsVisible(true);
+    }
+  }, [expertMode, expertDisclaimerShown, showDisclaimerInChat, activeChat, chats]);
 
   const logout = () => {
     localStorage.removeItem('auth');
@@ -115,6 +151,7 @@ export default function Home() {
               messages: [...c.messages, {
                 role: 'system',
                 content: `Ваш запрос был направлен эксперту. Номер инцидента: ${incident.incidentId}`,
+                date: new Date(),
               }],
             };
           }
@@ -132,6 +169,7 @@ export default function Home() {
             messages: [...c.messages, {
               role: 'system',
               content: 'Произошла ошибка при создании запроса эксперту. Пожалуйста, попробуйте позже.',
+              date: new Date(),
             }],
           };
         }
@@ -153,7 +191,7 @@ export default function Home() {
       if (chat.id === activeChat) {
         return {
           ...chat,
-          messages: [...chat.messages, { role: 'user', content: message }],
+          messages: [...chat.messages, { role: 'user', content: message, date: new Date() }],
           title: chat.messages.length === 0 ? (message.length > 25 ? message.substring(0, 25) + '...' : message) : chat.title,
         };
       }
@@ -176,8 +214,8 @@ export default function Home() {
               ...chat,
               messages: [
                 ...chat.messages,
-                { role: 'user', content: message },
-                { role: 'system', content: 'Сообщение отправлено эксперту. Ожидайте ответа.' },
+                { role: 'user', content: message, date: new Date() },
+                { role: 'system', content: 'Сообщение отправлено эксперту. Ожидайте ответа.', date: new Date() },
               ],
             };
           }
@@ -191,21 +229,42 @@ export default function Home() {
     } else {
       // Regular AI response for non-expert mode
       setTimeout(() => {
-        const responseText = expertMode
-          ? 'Ваш запрос был направлен специалисту по сетевому оборудованию. Ожидайте ответа в течение 15 минут.'
-          : 'Это симуляция ответа от системы. Для получения реальной технической поддержки требуется интеграция с базой знаний.';
-        
+        const responseText = '';
+        if (!responseText) return;
         const chatsWithResponse = chats.map(chat => {
           if (chat.id === activeChat) {
             return {
               ...chat,
-              messages: [...chat.messages, { role: 'user', content: message }, { role: 'assistant', content: responseText }],
+              messages: [...chat.messages, { role: 'user', content: message }, { role: 'system', content: responseText }],
             };
           }
           return chat;
         });
         setChats(chatsWithResponse);
       }, 1500);
+    }
+
+    if (waitingForUserQuestion) {
+      setTimeout(() => {
+        setChats(chats => chats.map(chat => {
+          if (chat.id === activeChat) {
+            return {
+              ...chat,
+              messages: [
+                ...chat.messages,
+                {
+                  role: 'engineer',
+                  content: 'Здравствуйте, я отвечу вам в течение 15 минут.',
+                  date: new Date(),
+                },
+              ],
+            };
+          }
+          return chat;
+        }));
+        setWaitingForUserQuestion(false);
+      }, 600);
+      return;
     }
   };
 
@@ -227,6 +286,7 @@ export default function Home() {
                 messages: [...chat.messages, {
                   role: 'system',
                   content: `Статус инцидента обновлен: ${status.status}${status.assignedTo ? `. Назначен: ${status.assignedTo}` : ''}`,
+                  date: new Date(),
                 }],
               };
             }
@@ -241,6 +301,47 @@ export default function Home() {
     const intervalId = setInterval(checkIncidentStatus, 30000); // Check every 30 seconds
     return () => clearInterval(intervalId);
   }, [activeChat, chats]);
+
+  // Функции для кнопок дисклеймера:
+  const handleDisclaimerAction = (action) => {
+    setDisclaimerButtonsVisible(false);
+    if (action === 'history') {
+      setChats(chats => chats.map(chat => {
+        if (chat.id === activeChat) {
+          return {
+            ...chat,
+            messages: [
+              ...chat.messages,
+              {
+                role: 'engineer',
+                content: 'Здравствуйте, я сейчас ознакомлюсь с историей чата и отвечу вам.',
+                date: new Date(),
+              },
+            ],
+          };
+        }
+        return chat;
+      }));
+    } else if (action === 'question') {
+      setChats(chats => chats.map(chat => {
+        if (chat.id === activeChat) {
+          return {
+            ...chat,
+            messages: [
+              ...chat.messages,
+              {
+                role: 'system',
+                content: 'Какой вопрос вы хотите задать?',
+                date: new Date(),
+              },
+            ],
+          };
+        }
+        return chat;
+      }));
+      setWaitingForUserQuestion(true);
+    }
+  };
 
   return (
     <div className="home-container opacity-0 transition-opacity duration-1000 flex h-screen overflow-hidden bg-white text-gray-800">
@@ -273,37 +374,54 @@ export default function Home() {
         <div className="p-3 shrink-0">
           <button 
             onClick={createNewChat}
-            className="w-full flex items-center justify-center py-2 px-3 border border-gray-300 rounded-md hover:bg-gray-200 transition-colors"
+            style={{ backgroundColor: 'rgb(93, 143, 194)', color: 'white' }}
+            className="w-full flex items-center justify-center py-2 px-3 border border-gray-300 rounded-md transition-colors hover:brightness-110"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
             Новый чат
           </button>
+          <div className="flex justify-center mt-2 space-x-2">
+            <button className="text-gray-500 text-sm border border-gray-300 rounded-md px-3 py-2 hover:bg-gray-50 w-full">
+              <span className="flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                Поиск
+              </span>
+            </button>
+          </div>
+        </div>
+        <div className="px-3 pt-8 pb-1">
+          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Чаты</h2>
         </div>
         
         <div className="flex-1 overflow-y-auto sidebar-chats">
-          {chats.map(chat => (
-            <div 
-              key={chat.id}
-              onClick={() => {
-                setActiveChat(chat.id);
-                if (window.innerWidth < 768) {
-                  setShowMobileSidebar(false);
-                }
-              }}
-              className={`p-3 cursor-pointer hover:bg-gray-200 transition-colors border-b border-gray-200 chat-item ${
-                activeChat === chat.id ? 'active' : ''
-              }`}
-            >
-              <div className="flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                </svg>
-                <span className="text-sm truncate">{chat.title}</span>
+          {chats.length === 0 ? (
+            <div className="text-gray-400 text-center mt-8 select-none text-sm">Нет чатов</div>
+          ) : (
+            chats.map(chat => (
+              <div
+                key={chat.id}
+                onClick={() => {
+                  setActiveChat(chat.id);
+                  if (window.innerWidth < 768) {
+                    setShowMobileSidebar(false);
+                  }
+                }}
+                className={`p-3 cursor-pointer hover:bg-gray-200 transition-colors border-b border-gray-200 chat-item ${activeChat === chat.id ? 'active' : ''}`}
+                style={{ position: 'relative', display: 'flex', alignItems: 'center' }}
+              >
+                <div className="flex items-center flex-1 truncate">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                  </svg>
+                  <span className="text-sm truncate flex-1">{chat.title}</span>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
       
@@ -368,149 +486,199 @@ export default function Home() {
         {/* Content */}
         <div className="flex-1 overflow-hidden">
           {activeTab === 'chat' ? (
-            <div className="flex flex-col h-full">
-              <div className="flex-1 flex flex-col items-center overflow-hidden">
-                <div className="flex flex-col w-full max-w-3xl h-full">
-                  {currentChat.messages.length === 0 ? (
-                    <div className="flex-1 flex items-center justify-center text-center px-4 py-4 md:py-8 overflow-auto empty-state-container">
-                      <div className="max-w-2xl w-full">
-                        <h2 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8 text-gray-800">Опишите свою проблему</h2>
-                        <div className="flex rounded-lg border border-gray-300 overflow-hidden">
-                          <input
-                            type="text"
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                            placeholder="Проблема с потерей пакетов на Cisco WS-C9300-24P-A"
-                            className="flex-1 px-4 py-3 focus:outline-none text-gray-800"
-                          />
-                          <button
-                            onClick={sendMessage}
-                            disabled={!message.trim()}
-                            className={`px-4 bg-gray-200 text-black transition-colors ${
-                              message.trim() ? 'hover:bg-gray-300' : 'opacity-50 cursor-not-allowed'
-                            }`}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                              <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-                            </svg>
-                          </button>
-                        </div>
-                      
-                        {/* AI/Expert Toggle */}
-                        <div className="flex justify-center mt-6">
-                          <div className="flex items-center px-4 py-2 space-x-3 border border-gray-300 rounded-md">
-                            <span className={`text-sm ${!expertMode ? 'font-medium' : ''} text-gray-600`}>AI</span>
-                            <label className="relative inline-flex items-center cursor-pointer">
-                              <input 
-                                type="checkbox" 
-                                className="sr-only peer" 
-                                checked={expertMode}
-                                onChange={() => {
-                                  setExpertMode(!expertMode);
-                                  handleExpertModeToggle(activeChat);
-                                }}
-                              />
-                              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-600"></div>
-                            </label>
-                            <span className={`text-sm ${expertMode ? 'font-medium' : ''} text-gray-600`}>Эксперт</span>
-                          </div>
-                        </div>
-                        
-                        <div className="flex justify-center mt-4 space-x-2">
-                          <button className="text-gray-500 text-sm border border-gray-300 rounded-md px-3 py-2 hover:bg-gray-50">
-                            <span className="flex items-center">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                              </svg>
-                              Поиск
-                            </span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      {/* Messages List - Responsive height with scrolling */}
-                      <div className="flex-1 overflow-y-auto p-4 space-y-4 mb-2 chat-messages-container">
-                        {currentChat.messages.map((msg, index) => (
-                          <div 
-                            key={index}
-                            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                          >
-                            <div 
-                              className={`max-w-xs sm:max-w-md p-3 rounded-lg chat-message ${
-                                msg.role === 'user' 
-                                  ? 'bg-gray-300 text-gray-800 rounded-br-none' 
-                                  : 'bg-gray-100 text-gray-800 rounded-bl-none'
+            chats.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full w-full text-center select-none">
+                <div className="text-2xl text-gray-400 mb-4">Нет чатов</div>
+                <button
+                  onClick={createNewChat}
+                  className="px-6 py-3 rounded-lg bg-blue-600 text-white font-semibold shadow hover:bg-blue-700 transition-colors"
+                >
+                  Новый чат
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col h-full">
+                <div className="flex-1 flex flex-col items-center overflow-hidden">
+                  <div className="flex flex-col w-full max-w-3xl h-full">
+                    {currentChat.messages.length === 0 ? (
+                      <div className="flex-1 flex items-center justify-center text-center px-4 py-4 md:py-8 overflow-auto empty-state-container">
+                        <div className="max-w-2xl w-full">
+                          <h2 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8 text-gray-800">Опишите свою проблему</h2>
+                          <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+                            <input
+                              type="text"
+                              value={message}
+                              onChange={(e) => setMessage(e.target.value)}
+                              onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                              placeholder="Проблема с потерей пакетов на Cisco WS-C9300-24P-A"
+                              className="flex-1 px-4 py-3 focus:outline-none text-gray-800"
+                            />
+                            <button
+                              onClick={sendMessage}
+                              disabled={!message.trim()}
+                              className={`px-4 bg-gray-200 text-black transition-colors ${
+                                message.trim() ? 'hover:bg-gray-300' : 'opacity-50 cursor-not-allowed'
                               }`}
                             >
-                              {msg.content}
-                            </div>
-                          </div>
-                        ))}
-                        <div ref={messagesEndRef} />
-                      </div>
-
-                      {/* Message Input and AI/Expert toggle */}
-                      <div className="w-full px-4 chat-input-wrapper">
-                        {/* AI/Expert Toggle */}
-                        <div className="flex justify-between items-center mb-3">
-                          <div className="flex items-center space-x-3">
-                            <span className={`text-sm ${!expertMode ? 'font-medium' : ''} text-gray-600`}>AI</span>
-                            <label className="relative inline-flex items-center cursor-pointer">
-                              <input 
-                                type="checkbox" 
-                                className="sr-only peer" 
-                                checked={expertMode}
-                                onChange={() => {
-                                  setExpertMode(!expertMode);
-                                  handleExpertModeToggle(activeChat);
-                                }}
-                              />
-                              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-600"></div>
-                            </label>
-                            <span className={`text-sm ${expertMode ? 'font-medium' : ''} text-gray-600`}>Эксперт</span>
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                              </svg>
+                            </button>
                           </div>
                           
-                          <button className="text-gray-500 text-sm border border-gray-300 rounded-md px-3 py-2 hover:bg-gray-50">
-                            <span className="flex items-center">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                              </svg>
-                              Поиск
-                            </span>
-                          </button>
-                        </div>
-                        
-                        {/* Message input */}
-                        <div className="flex rounded-lg border border-gray-300 overflow-hidden mb-4">
-                          <input
-                            type="text"
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                            placeholder="Введите сообщение..."
-                            className="flex-1 px-4 py-3 focus:outline-none text-gray-800"
-                          />
-                          <button
-                            onClick={sendMessage}
-                            disabled={!message.trim()}
-                            className={`px-4 bg-gray-200 text-black transition-colors ${
-                              message.trim() ? 'hover:bg-gray-300' : 'opacity-50 cursor-not-allowed'
-                            }`}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                              <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-                            </svg>
-                          </button>
+                          {/* AI/Expert Toggle */}
+                          <div className="flex justify-center mt-6">
+                            <div className="flex items-center px-4 py-2 space-x-3 border border-gray-300 rounded-md">
+                              <span className={`text-sm ${!expertMode ? 'font-medium' : ''} text-gray-600`}>AI</span>
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input 
+                                  type="checkbox" 
+                                  className="sr-only peer" 
+                                  checked={expertMode}
+                                  onChange={() => {
+                                    setExpertMode(!expertMode);
+                                    handleExpertModeToggle(activeChat);
+                                  }}
+                                />
+                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-600"></div>
+                              </label>
+                              <span className={`text-sm ${expertMode ? 'font-medium' : ''} text-gray-600`}>Эксперт</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </>
-                  )}
+                    ) : (
+                      <>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4 mb-2 chat-messages-container">
+                          {currentChat.messages.map((msg, index) => {
+                            const date = msg.date ? new Date(msg.date) : null;
+                            const timeStr = date ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) : '';
+                            const isUser = msg.role === 'user';
+                            const isSystem = msg.role === 'system';
+                            const isEngineer = msg.role === 'engineer';
+                            const isShort = msg.content && msg.content.length <= 20;
+                            const timeColor = isUser ? 'rgb(239, 248, 253)' : isSystem ? 'rgb(155, 155, 155)' : isEngineer ? 'rgb(255, 255, 255)' : undefined;
+                            const isDisclaimer = msg.role === 'disclaimer';
+                            return (
+                              <div 
+                                key={index}
+                                className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
+                              >
+                                <div 
+                                  className={`max-w-xs sm:max-w-md p-3 rounded-lg chat-message ` +
+                                    (isUser
+                                      ? 'message-user-bubble'
+                                      : isSystem
+                                        ? 'message-system-bubble'
+                                        : isEngineer
+                                          ? 'message-engineer-bubble'
+                                          : isDisclaimer
+                                            ? 'message-disclaimer-bubble'
+                                            : '')
+                                  }
+                                  style={
+                                    isUser ? undefined : isSystem ? undefined : isEngineer ? undefined : isDisclaimer ? undefined : {}
+                                  }
+                                >
+                                  {isDisclaimer ? (
+                                    <>
+                                      <div style={{ marginBottom: disclaimerButtonsVisible ? 18 : 0 }}>{msg.content}</div>
+                                      {disclaimerButtonsVisible && (
+                                        <div className="disclaimer-buttons">
+                                          <button type="button" onClick={() => handleDisclaimerAction('history')}>Отправить историю чата</button>
+                                          <button type="button" onClick={() => handleDisclaimerAction('question')}>Задать вопрос</button>
+                                        </div>
+                                      )}
+                                      {msg.date && (
+                                        <div style={{ fontSize: '0.82em', opacity: 0.6, marginTop: 8, textAlign: 'center', color: '#888' }}>
+                                          {new Date(msg.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                        </div>
+                                      )}
+                                    </>
+                                  ) : isEngineer ? (
+                                    <>
+                                      <div>{msg.content}</div>
+                                      {msg.date && (
+                                        <div style={{ fontSize: '0.82em', opacity: 0.6, marginTop: 8, textAlign: 'right', color: '#888' }}>
+                                          {new Date(msg.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                        </div>
+                                      )}
+                                    </>
+                                  ) : (
+                                    isShort ? (
+                                      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end' }}>
+                                        <span style={{ flex: '1 1 auto', wordBreak: 'break-word' }}>{msg.content}</span>
+                                        {timeStr && (
+                                          <span style={{ fontSize: '0.85em', opacity: 0.7, marginLeft: 8, whiteSpace: 'nowrap', alignSelf: 'flex-end', color: timeColor }}>{timeStr}</span>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                        <span style={{ flex: '1 1 auto', wordBreak: 'break-word', width: '100%' }}>{msg.content}</span>
+                                        {timeStr && (
+                                          <span style={{ fontSize: '0.85em', opacity: 0.7, marginTop: 8, alignSelf: 'flex-end', textAlign: 'right', color: timeColor }}>{timeStr}</span>
+                                        )}
+                                      </div>
+                                    )
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                          <div ref={messagesEndRef} />
+                        </div>
+
+                        {/* Message Input and AI/Expert toggle */}
+                        <div className="w-full px-4 chat-input-wrapper">
+                          {/* AI/Expert Toggle */}
+                          <div className="flex justify-between items-center mb-3">
+                            <div className="flex items-center space-x-3">
+                              <span className={`text-sm ${!expertMode ? 'font-medium' : ''} text-gray-600`}>AI</span>
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input 
+                                  type="checkbox" 
+                                  className="sr-only peer" 
+                                  checked={expertMode}
+                                  onChange={() => {
+                                    setExpertMode(!expertMode);
+                                    handleExpertModeToggle(activeChat);
+                                  }}
+                                />
+                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-600"></div>
+                              </label>
+                              <span className={`text-sm ${expertMode ? 'font-medium' : ''} text-gray-600`}>Эксперт</span>
+                            </div>
+                          </div>
+                          
+                          {/* Message input */}
+                          <div className="flex rounded-lg border border-gray-300 overflow-hidden mb-4">
+                            <input
+                              type="text"
+                              value={message}
+                              onChange={(e) => setMessage(e.target.value)}
+                              onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                              placeholder="Введите сообщение..."
+                              className="flex-1 px-4 py-3 focus:outline-none text-gray-800"
+                            />
+                            <button
+                              onClick={sendMessage}
+                              disabled={!message.trim()}
+                              className={`px-4 bg-gray-200 text-black transition-colors ${
+                                message.trim() ? 'hover:bg-gray-300' : 'opacity-50 cursor-not-allowed'
+                              }`}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
+            )
           ) : (
             // Community Tab Content
             <div className="overflow-auto h-full">
@@ -519,6 +687,50 @@ export default function Home() {
           )}
         </div>
       </div>
+
+      {showExpertDisclaimer && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.25)',
+          zIndex: 50,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: 16,
+            boxShadow: '0 4px 32px rgba(0,0,0,0.15)',
+            padding: '2.5rem 2rem',
+            maxWidth: 400,
+            textAlign: 'center',
+            fontSize: '1.15rem',
+            fontWeight: 500,
+            color: '#222',
+          }}>
+            <div style={{ fontSize: '2.2rem', marginBottom: 16 }}>⚠️</div>
+            <div style={{ marginBottom: 24 }}>
+              Все вопросы будут отправлены инженеру.<br/>
+              Инженеру потребуется время на ознакомление.<br/>
+              Инженер направит ответ в течение 15 минут.
+            </div>
+            <button
+              onClick={() => setShowExpertDisclaimer(false)}
+              style={{
+                background: 'rgb(93, 143, 194)',
+                color: 'white',
+                border: 'none',
+                borderRadius: 8,
+                padding: '0.75rem 2.5rem',
+                fontSize: '1rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >Понятно</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -63,6 +63,84 @@ button {
   @apply bg-gray-100 text-gray-800 rounded-bl-none;
 }
 
+.message-user-bubble {
+  background-color: rgb(93, 143, 194);
+  color: white;
+  border-radius: 18px 18px 6px 18px;
+  position: relative;
+  margin-left: auto;
+  margin-bottom: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  max-width: 80%;
+  word-break: break-word;
+}
+
+.message-system-bubble {
+  background-color: rgb(244, 244, 244);
+  color: black;
+  border-radius: 18px 18px 18px 6px;
+  position: relative;
+  margin-right: auto;
+  margin-bottom: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  max-width: 80%;
+  word-break: break-word;
+}
+
+.message-engineer-bubble {
+  background: rgb(244, 244, 244);
+  color: #222;
+  border-radius: 18px 18px 18px 6px;
+  border: 1px solid #e5e5ea;
+  margin: 1.2rem auto 0.5rem 0;
+  margin-right: auto;
+  padding: 0.75rem 1.25rem;
+  max-width: 80%;
+  word-break: break-word;
+  font-style: normal;
+  font-weight: 400;
+  text-align: left;
+}
+
+.message-disclaimer-bubble {
+  background: rgb(232, 242, 255);
+  color: rgb(33, 78, 160);
+  border-radius: 14px;
+  border: 1px solid #b6d4fe;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  margin: 1.5rem auto;
+  padding: 1rem 1.5rem;
+  max-width: 80%;
+  word-break: break-word;
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 500;
+}
+
+.message-disclaimer-bubble .disclaimer-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.message-disclaimer-bubble button {
+  background: rgb(33, 78, 160);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  box-shadow: none;
+}
+
+.message-disclaimer-bubble button:hover {
+  background: rgb(93, 143, 194);
+}
+
 /* Tab styles */
 .tab-active {
   @apply text-gray-600 border-b-2 border-gray-400;

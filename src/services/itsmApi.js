@@ -1,6 +1,6 @@
 // Naumen ITSM 365 API client
-const ITSM_API_BASE_URL = process.env.REACT_APP_ITSM_API_URL || 'https://your-instance.itsm365.com/sd';
-const ITSM_API_ACCESS_KEY = process.env.REACT_APP_ITSM_ACCESS_KEY;
+const ITSM_API_BASE_URL = import.meta.env.VITE_ITSM_API_URL || 'https://your-instance.itsm365.com/sd';
+const ITSM_API_ACCESS_KEY = import.meta.env.VITE_ITSM_ACCESS_KEY;
 
 class ITSMApiClient {
   constructor(baseUrl = ITSM_API_BASE_URL, accessKey = ITSM_API_ACCESS_KEY) {
