@@ -5,6 +5,26 @@ import Community from './Community'; // Import the Community component
 import { itsmApi } from '../services/itsmApi';
 import { v4 as uuidv4 } from 'uuid';
 
+// Добавить функцию для вызова FastAPI
+async function fetchAiResponse(message) {
+  try {
+    const response = await fetch('http://localhost:8000/api/ai-chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ message }),
+    });
+    if (!response.ok) {
+      return '[Ошибка AI сервера]';
+    }
+    const data = await response.json();
+    return data.reply || '[Нет ответа от AI]';
+  } catch (e) {
+    return '[Ошибка соединения с AI сервером]';
+  }
+}
+
 export default function Home() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('chat');
@@ -34,6 +54,11 @@ export default function Home() {
   
   const [activeChat, setActiveChat] = useState(chats[0].id);
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
+  const lastUserMessageRef = useRef(null); // Новый ref для последнего сообщения пользователя
+
+  // Определяю currentChat сразу после хуков useState
+  const currentChat = chats.find(chat => chat.id === activeChat) || chats[0];
 
   // Check authentication
   useEffect(() => {
@@ -52,15 +77,18 @@ export default function Home() {
 
   // Scroll to bottom when messages update
   useEffect(() => {
-    if (messagesEndRef.current) {
+    const lastMsg = currentChat.messages[currentChat.messages.length - 1];
+    if (lastMsg && lastMsg.role === 'user' && lastUserMessageRef.current) {
+      lastUserMessageRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [chats, activeChat]);
+  }, [currentChat.messages.length]);
 
   // Use effect for expert mode
   useEffect(() => {
-    if (expertMode && !expertDisclaimerShown && !showDisclaimerInChat) {
-      // Добавляем дисклеймер в чат
+    if (expertMode) {
+      // Добавляем дисклеймер в конец сообщений при каждом включении expertMode
       const id = Date.now();
       setChats(chats => chats.map(chat => {
         if (chat.id === activeChat) {
@@ -84,15 +112,12 @@ export default function Home() {
       setExpertDisclaimerShown(true);
       setDisclaimerButtonsVisible(true);
     }
-  }, [expertMode, expertDisclaimerShown, showDisclaimerInChat, activeChat, chats]);
+  }, [expertMode, activeChat]);
 
   const logout = () => {
     localStorage.removeItem('auth');
     navigate('/');
   };
-
-  // Get current chat
-  const currentChat = chats.find(chat => chat.id === activeChat) || chats[0];
 
   // Create new chat with unique ID
   const createNewChat = () => {
@@ -105,11 +130,12 @@ export default function Home() {
       itsmStatus: null,
       expertAssigned: false,
     };
-    
-    setChats([newChat, ...chats]);
-    setActiveChat(newChatId);
+    setChats(prevChats => {
+      const updated = [newChat, ...prevChats];
+      setActiveChat(newChatId); // Выделяем новый чат после обновления
+      return updated;
+    });
     setMessage('');
-
     if (window.innerWidth < 768) {
       setShowMobileSidebar(false);
     }
@@ -227,21 +253,20 @@ export default function Home() {
         // Handle error
       }
     } else {
-      // Regular AI response for non-expert mode
-      setTimeout(() => {
-        const responseText = '';
-        if (!responseText) return;
-        const chatsWithResponse = chats.map(chat => {
-          if (chat.id === activeChat) {
-            return {
-              ...chat,
-              messages: [...chat.messages, { role: 'user', content: message }, { role: 'system', content: responseText }],
-            };
-          }
-          return chat;
-        });
-        setChats(chatsWithResponse);
-      }, 1500);
+      // AI режим: получаем ответ от FastAPI
+      const aiReply = await fetchAiResponse(message);
+      setChats(chats => chats.map(chat => {
+        if (chat.id === activeChat) {
+          return {
+            ...chat,
+            messages: [
+              ...chat.messages,
+              { role: 'system', content: aiReply, date: new Date() },
+            ],
+          };
+        }
+        return chat;
+      }));
     }
 
     if (waitingForUserQuestion) {
@@ -343,6 +368,20 @@ export default function Home() {
     }
   };
 
+  // Функция для удаления чата
+  const handleDeleteChat = (chatId) => {
+    setChats(chats => chats.filter(chat => chat.id !== chatId));
+    if (activeChat === chatId && chats.length > 1) {
+      // Переключаемся на первый оставшийся чат
+      const nextChat = chats.find(chat => chat.id !== chatId);
+      setActiveChat(nextChat.id);
+    }
+    if (activeChat === chatId && chats.length === 1) {
+      setActiveChat(null);
+    }
+    setChatMenuOpen(null);
+  };
+
   return (
     <div className="home-container opacity-0 transition-opacity duration-1000 flex h-screen overflow-hidden bg-white text-gray-800">
       {/* Mobile sidebar backdrop */}
@@ -397,31 +436,69 @@ export default function Home() {
           <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Чаты</h2>
         </div>
         
-        <div className="flex-1 overflow-y-auto sidebar-chats">
-          {chats.length === 0 ? (
-            <div className="text-gray-400 text-center mt-8 select-none text-sm">Нет чатов</div>
-          ) : (
-            chats.map(chat => (
-              <div
-                key={chat.id}
-                onClick={() => {
-                  setActiveChat(chat.id);
-                  if (window.innerWidth < 768) {
-                    setShowMobileSidebar(false);
-                  }
-                }}
-                className={`p-3 cursor-pointer hover:bg-gray-200 transition-colors border-b border-gray-200 chat-item ${activeChat === chat.id ? 'active' : ''}`}
-                style={{ position: 'relative', display: 'flex', alignItems: 'center' }}
-              >
-                <div className="flex items-center flex-1 truncate">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                  </svg>
-                  <span className="text-sm truncate flex-1">{chat.title}</span>
-                </div>
-              </div>
-            ))
-          )}
+        <div className="flex-1 overflow-y-auto sidebar-chats px-2 py-3">
+          <div className="flex flex-col">
+            {chats.length === 0 ? (
+              <div className="text-gray-400 text-center mt-8 select-none text-sm">Нет чатов</div>
+            ) : (
+              chats.map(chat => {
+                const isActive = activeChat === chat.id;
+                return (
+                  <div
+                    key={chat.id}
+                    onClick={() => {
+                      if (!isActive) {
+                        setActiveChat(chat.id);
+                        if (window.innerWidth < 768) {
+                          setShowMobileSidebar(false);
+                        }
+                      }
+                    }}
+                    className={`chat-item flex items-center px-4 py-2 rounded-xl transition-all duration-150 relative group select-none ${isActive ? 'bg-gray-300' : 'hover:bg-gray-100 cursor-pointer'}`}
+                    style={{ minHeight: '44px' }}
+                  >
+                    <span className="text-sm truncate flex-1 text-gray-900">{chat.title}</span>
+                    {/* Троеточие — без подложки, справа, только при наведении */}
+                    <button
+                      className={`ml-2 transition-opacity duration-150 ${chatMenuOpen === chat.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                      onClick={e => {
+                        e.stopPropagation();
+                        setChatMenuOpen(chatMenuOpen === chat.id ? null : chat.id);
+                      }}
+                      tabIndex={-1}
+                      style={{ background: 'none', border: 'none', outline: 'none', boxShadow: 'none', padding: 0, minWidth: 0, display: 'flex', alignItems: 'center', height: '32px' }}
+                    >
+                      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-gray-500">
+                        <circle cx="5" cy="12" r="1.5" />
+                        <circle cx="12" cy="12" r="1.5" />
+                        <circle cx="19" cy="12" r="1.5" />
+                      </svg>
+                    </button>
+                    {/* Выпадающее меню */}
+                    {chatMenuOpen === chat.id && (
+                      <div
+                        className="absolute right-2 top-12 z-30 bg-white rounded-xl border border-gray-200 animate-fade-in"
+                        style={{ minWidth: '130px' }}
+                        onClick={e => e.stopPropagation()}
+                      >
+                        <button
+                          className="flex items-center w-full px-3 py-2 text-red-600 hover:bg-red-100 hover:text-red-700 transition-colors gap-2 rounded-lg text-base justify-center"
+                          onClick={() => handleDeleteChat(chat.id)}
+                        >
+                          {/* Красный крестик (outline) */}
+                          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" strokeLinecap="round"/>
+                            <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" strokeLinecap="round"/>
+                          </svg>
+                          <span>Удалить</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
       </div>
       
@@ -549,7 +626,10 @@ export default function Home() {
                       </div>
                     ) : (
                       <>
-                        <div className="flex-1 overflow-y-auto p-4 space-y-4 mb-2 chat-messages-container">
+                        <div
+                          className="flex-1 overflow-y-auto p-4 space-y-4 mb-2 chat-messages-container flex flex-col"
+                          ref={messagesContainerRef}
+                        >
                           {currentChat.messages.map((msg, index) => {
                             const date = msg.date ? new Date(msg.date) : null;
                             const timeStr = date ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) : '';
@@ -559,9 +639,11 @@ export default function Home() {
                             const isShort = msg.content && msg.content.length <= 20;
                             const timeColor = isUser ? 'rgb(239, 248, 253)' : isSystem ? 'rgb(155, 155, 155)' : isEngineer ? 'rgb(255, 255, 255)' : undefined;
                             const isDisclaimer = msg.role === 'disclaimer';
+                            const isLastUserMsg = isUser && index === currentChat.messages.length - 1;
                             return (
                               <div 
                                 key={index}
+                                ref={isLastUserMsg ? lastUserMessageRef : null}
                                 className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
                               >
                                 <div 

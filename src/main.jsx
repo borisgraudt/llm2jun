@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import './index.css'
 import Login from './pages/Login'
 import Home from './pages/Home'
+import Register from './pages/Register'
 
 // Auth protection component
 const ProtectedRoute = ({ children }) => {
@@ -16,6 +17,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route 
           path="/home" 
           element={

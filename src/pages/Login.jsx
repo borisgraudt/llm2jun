@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 export default function Login() {
-  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
   const navigate = useNavigate()
 
   // Animation effect when component mounts
@@ -15,16 +16,27 @@ export default function Login() {
     }
   }, [])
 
-  const handleLogin = () => {
-    if (username === 'admin' && password === 'networks123') {
-      setIsLoading(true)
-      // Simulate loading
-      setTimeout(() => {
-        localStorage.setItem('auth', 'true')
-        navigate('/home')
-      }, 1000)
-    } else {
-      alert('Неверный логин или пароль') // Invalid login in Russian
+  const handleLogin = async () => {
+    setError('')
+    setIsLoading(true)
+    try {
+      const res = await fetch('http://localhost:8000/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        setError(data.detail || 'Ошибка входа')
+        setIsLoading(false)
+        return
+      }
+      localStorage.setItem('auth', 'true')
+      navigate('/home')
+    } catch (e) {
+      setError('Ошибка соединения с сервером')
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -43,18 +55,18 @@ export default function Login() {
           <p className="text-center text-gray-600 italic mb-6">Техподдержка будущего, сегодня.</p>
           <h2 className="text-2xl font-bold text-center text-gray-800">Войти</h2>
         </div>
-        
         <div className="space-y-4">
           <div className="group">
             <input 
               className="w-full p-3 bg-white border border-gray-300 rounded-md transition-all focus:border-gray-500 focus:ring-2 focus:ring-gray-200 text-black" 
-              type="text" 
-              placeholder="Имя пользователя" 
-              value={username} 
-              onChange={e => setUsername(e.target.value)} 
+              type="email" 
+              placeholder="Email" 
+              value={email} 
+              onChange={e => setEmail(e.target.value)} 
+              autoComplete="email"
+              disabled={isLoading}
             />
           </div>
-          
           <div className="group">
             <input 
               className="w-full p-3 bg-white border border-gray-300 rounded-md transition-all focus:border-gray-500 focus:ring-2 focus:ring-gray-200 text-black" 
@@ -62,12 +74,14 @@ export default function Login() {
               placeholder="Пароль" 
               value={password} 
               onChange={e => setPassword(e.target.value)} 
+              autoComplete="current-password"
+              disabled={isLoading}
             />
           </div>
-          
+          {error && <div className="text-red-500 text-sm -mt-2">{error}</div>}
           <button 
             onClick={handleLogin} 
-            disabled={isLoading}
+            disabled={isLoading || !email || !password}
             className="w-full bg-gray-800 hover:bg-gray-900 text-white font-medium py-3 rounded-md transition-colors duration-300 flex items-center justify-center"
           >
             {isLoading ? (

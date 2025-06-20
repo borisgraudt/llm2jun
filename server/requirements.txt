@@ -1,0 +1,5 @@
+fastapi
+uvicorn[standard]
+httpx
+python-dotenv
+# Теперь используется Together.ai API, а не HuggingFace 
